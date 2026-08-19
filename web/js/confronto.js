@@ -77,11 +77,12 @@ function rigaInfo(k, v) {
   return `<div class="row"><span class="k">${k}</span><span class="v">${v || "—"}</span></div>`;
 }
 
-function colonna(dett, chiave) {
+function colonna(dett, chiave, record) {
   const inf = dett.infobox || {};
   return `
     <div class="compare-col ${chiave}">
-      <h2>${dett.nome}</h2>
+      <h2><a href="lottatore.html?slug=${slugDaLink(dett.link)}">${dett.nome}</a></h2>
+      <div class="compare-record">${record || "—"}</div>
       ${rigaInfo("Categoria", inf["Division"])}
       ${rigaInfo("Altezza", inf["Height"])}
       ${rigaInfo("Reach", inf["Reach"])}
@@ -164,9 +165,9 @@ async function aggiornaConfronto() {
 
   out.innerHTML = `
     <div class="compare-grid">
-      ${colonna(dA, "a")}
+      ${colonna(dA, "a", scelti.a.record_mma)}
       <div class="vs-divider">VS</div>
-      ${colonna(dB, "b")}
+      ${colonna(dB, "b", scelti.b.record_mma)}
     </div>
     <div class="bar-compare">
       ${barraCoppia("Reach (cm)", reachA, reachB)}

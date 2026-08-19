@@ -4,6 +4,7 @@ renderChrome("database");
 document.getElementById("search-icon").innerHTML = icon("search");
 
 const ORDINE_CATEGORIE = [
+  "Leggende (ex campioni)",
   "Heavyweights (265lb, 120 kg)",
   "Light heavyweights (205 lb, 93 kg)",
   "Middleweights (185 lb, 84 kg)",
@@ -53,12 +54,14 @@ function renderPills() {
 function cardLottatore(r) {
   const eta = r.eta ? `<span>${icon("age")} ${r.eta} anni</span>` : "";
   const altezza = r.altezza ? `<span>${icon("ruler")} ${r.altezza}</span>` : "";
-  const link = r.link ? `<a href="${r.link}" target="_blank" rel="noopener">${icon("link")}</a>` : "";
+  const href = r.slug ? `lottatore.html?slug=${r.slug}` : null;
+  const nome = href ? `<a href="${href}">${r.nome}</a>` : r.nome;
+  const link = href ? `<a href="${href}">${icon("link")}</a>` : "";
   return `
     <div class="fighter-card">
       <div class="top-row">
         <div>
-          <div class="name">${r.nome}</div>
+          <div class="name">${nome}</div>
           ${r.soprannome ? `<div class="nickname">"${r.soprannome}"</div>` : ""}
         </div>
         <span class="tag">${nomeBreveCategoria(r.categoria)}</span>

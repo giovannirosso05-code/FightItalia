@@ -1,4 +1,4 @@
-import { fetchJSON, renderChrome, icon } from "./common.js";
+import { fetchJSON, renderChrome, icon, slugDaLink } from "./common.js";
 
 renderChrome("eventi");
 
@@ -25,8 +25,15 @@ function rigaEvento(ev) {
         <div class="name">${ev.evento} ${tagTipo(ev.tipo)}</div>
         ${luogo ? `<div class="venue">${icon("pin")} ${luogo}</div>` : ""}
       </div>
-      ${ev.link ? `<a class="event-link" href="${ev.link}" target="_blank" rel="noopener">Dettagli →</a>` : "<span></span>"}
+      ${ev.link ? `<a class="event-link" href="evento.html?slug=${slugDaLink(ev.link)}">Dettagli →</a>` : "<span></span>"}
     </div>`;
+}
+
+function ordinaData(lista, crescente) {
+  return [...lista].sort((x, y) => {
+    const dx = new Date(x.data), dy = new Date(y.data);
+    return crescente ? dx - dy : dy - dx;
+  });
 }
 
 let passati = [];
@@ -40,12 +47,13 @@ function renderPassati() {
 
 async function init() {
   const eventi = await fetchJSON("data/eventi.json");
-  const prossimi = eventi.filter((e) => e.stato === "programmato");
-  passati = eventi.filter((e) => e.stato === "passato");
+  // Ordine cronologico crescente: il prossimo evento (il più vicino da
+  // oggi) va per primo, non il più lontano nel tempo.
+  const prossimi = ordinaData(eventi.filter((e) => e.stato === "programmato"), true);
+  passati = ordinaData(eventi.filter((e) => e.stato === "passato"), false);
 
   document.getElementById("eventi-prossimi").innerHTML =
     prossimi.map(rigaEvento).join("") || `<div class="empty-state">Nessun evento programmato trovato.</div>`;
-
   renderPassati();
   document.getElementById("load-more").addEventListener("click", () => {
     mostrati += 20;
