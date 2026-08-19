@@ -699,6 +699,65 @@ h1, h2, h3, h4 {
 
 .load-more:hover { border-color: var(--accent); color: var(--accent); }
 
+/* ---------- Europa (organizzazioni) ---------- */
+
+.org-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 18px;
+  padding: 8px 0 60px;
+}
+
+.org-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: 22px;
+  box-shadow: var(--shadow-card);
+}
+
+.org-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.org-head h2 {
+  font-size: 22px;
+  text-transform: none;
+}
+
+.org-sub {
+  color: var(--text-muted);
+  font-size: 12.5px;
+  margin-top: 4px;
+}
+
+.org-desc {
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  line-height: 1.6;
+  margin: 12px 0 16px;
+}
+
+.champ-list {
+  border-top: 1px solid var(--border-soft);
+  padding-top: 12px;
+}
+
+.champ-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 0;
+  font-size: 13.5px;
+}
+
+.champ-cat { color: var(--text-muted); }
+.champ-nome { font-weight: 500; text-align: right; }
+
 /* ---------- Footer ---------- */
 
 .site-footer {
