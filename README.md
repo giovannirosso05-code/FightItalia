@@ -21,25 +21,40 @@ User-Agent descrittivo (richiesto dalla policy Wikimedia) — vedi
 Sito statico vero (HTML/CSS/JS scritti a mano, nessun framework/build tool
 necessario) — Python serve solo a preparare i dati, non gira come server.
 Prima versione era in Streamlit: aveva l'aria di una dashboard interna,
-non di un sito per utenti veri, quindi è stata sostituita da `web/`.
+non di un sito per utenti veri, quindi è stata sostituita da `docs/`
+(chiamata cosí, invece di `web/`, apposta: è il nome che GitHub Pages
+riconosce senza bisogno di configurare nient'altro — vedi sotto).
 
 ```
 scraper_ufc.py   scraping Wikipedia (roster, eventi, dettaglio lottatore) -> cache/*.csv
-build_data.py    legge la cache e genera i JSON statici in web/data/
-web/             il sito vero e proprio (index.html, confronto.html, eventi.html)
+build_data.py    legge la cache e genera i JSON statici in docs/data/
+docs/            il sito vero e proprio (index.html, confronto.html, eventi.html...)
 ```
 
-## Come avviare
+## Come avviare in locale
 
 ```powershell
 pip install -r requirements.txt
-python build_data.py          # genera/aggiorna web/data/ (richiede qualche minuto la prima volta)
-python -m http.server 8000 --directory web
+python build_data.py          # genera/aggiorna docs/data/ (richiede qualche minuto la prima volta)
+python -m http.server 8000 --directory docs
 ```
 
 Si apre su `http://localhost:8000`. Rilanciare `build_data.py` ogni volta
 che si vogliono dati aggiornati (salta i lottatori già scaricati, quindi
 le run successive sono quasi istantanee).
+
+## Pubblicare online (GitHub Pages, gratis)
+
+1. In GitHub Desktop: **Publish repository** (crea il repository su GitHub
+   e carica tutto in un click, usando l'account già collegato).
+2. Sul sito GitHub, nel repository: **Settings → Pages → Source: Deploy
+   from a branch → Branch: master, cartella: /docs → Save**.
+3. Dopo un minuto il sito è live su
+   `https://<tuo-utente>.github.io/Macinando/`.
+
+Per aggiornare il sito pubblicato dopo una modifica: `git push` (o
+"Push origin" in GitHub Desktop) — GitHub Pages si aggiorna da solo in
+un minuto o due.
 
 ## Cosa c'è nell'MVP
 
@@ -80,14 +95,16 @@ analisi).
 
 - `scraper_ufc.py` — scraping Wikipedia (roster, eventi, dettaglio
   lottatore) con cache su CSV locale.
-- `build_data.py` — genera `web/data/roster.json`, `web/data/eventi.json`
-  e un JSON per lottatore in `web/data/lottatori/`.
-- `web/` — il sito: `index.html` (database lottatori), `confronto.html`
-  (tale of the tape), `eventi.html` (calendario), `css/style.css`,
-  `js/*.js` (vanilla JS, nessuna dipendenza esterna).
+- `build_data.py` — genera `docs/data/roster.json`, `docs/data/eventi.json`
+  e un JSON per lottatore in `docs/data/lottatori/`.
+- `docs/` — il sito: `index.html` (database lottatori), `confronto.html`
+  (tale of the tape), `eventi.html` (calendario), `europa.html`
+  (organizzazioni MMA europee), `lottatore.html`/`evento.html` (schede di
+  dettaglio), `css/style.css`, `js/*.js` (vanilla JS, nessuna dipendenza
+  esterna).
 - `cache/` — CSV scaricati da Wikipedia, rigenerabile in qualsiasi momento
   (gitignored, serve solo in locale per velocizzare `build_data.py`).
-- `web/data/` — i JSON serviti dal sito, **versionati** (non gitignored):
+- `docs/data/` — i JSON serviti dal sito, **versionati** (non gitignored):
   cosí il sito funziona subito anche se lo pubblichi cosí com'è su un
   hosting statico, senza dover far girare Python in produzione. Vanno
   rigenerati e ricommittati quando si vogliono dati più freschi.

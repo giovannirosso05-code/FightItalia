@@ -1,5 +1,5 @@
 """
-Genera i file JSON statici per il frontend (web/data/) a partire dai dati
+Genera i file JSON statici per il frontend (docs/data/) a partire dai dati
 scaricati da scraper_ufc.py. Va rilanciato ogni volta che si vogliono dati
 aggiornati (rilancia anche lo scraping se la cache CSV non c'e' o e' vecchia).
 
@@ -7,7 +7,7 @@ Il dettaglio di ogni lottatore (infobox + storico incontri) viene
 pre-scaricato qui per tutti i lottatori con una pagina Wikipedia, cosi' il
 sito finale e' completamente statico (nessun server Python da tenere
 acceso) — ogni lottatore diventa un file JSON separato in
-web/data/lottatori/<slug>.json, scaricato dal browser solo quando serve.
+docs/data/lottatori/<slug>.json, scaricato dal browser solo quando serve.
 """
 
 import json
@@ -19,7 +19,7 @@ import pandas as pd
 
 from scraper_ufc import scarica_dettaglio_lottatore, scarica_eventi, scarica_roster
 
-WEB_DATA = Path(__file__).parent / "web" / "data"
+WEB_DATA = Path(__file__).parent / "docs" / "data"
 WEB_DATA_LOTTATORI = WEB_DATA / "lottatori"
 WEB_DATA_LOTTATORI.mkdir(parents=True, exist_ok=True)
 
