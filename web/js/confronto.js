@@ -63,7 +63,13 @@ function formDots(storico, chiave) {
   if (!storico || !storico.length) return "";
   const ultimi = storico.slice(0, 5);
   return `<div class="form-dots">${ultimi
-    .map((f) => `<div class="dot-result ${classeRisultato(f["res."])}" title="${f["res."]} vs ${f.opponent || ""}">${letteraRisultato(f["res."])}</div>`)
+    .map(
+      (f) => `
+      <div class="dot-result ${classeRisultato(f["res."])}" tabindex="0">
+        ${letteraRisultato(f["res."])}
+        <span class="dot-tooltip">vs ${f.opponent || "?"}<br>${f.date || ""}</span>
+      </div>`
+    )
     .join("")}</div>`;
 }
 
@@ -94,6 +100,30 @@ function barraCoppia(label, valA, valB) {
       <div class="pair">
         <div class="bar a" style="width:${(a / tot) * 100}%">${valA ?? "—"}</div>
         <div class="bar b" style="width:${(b / tot) * 100}%">${valB ?? "—"}</div>
+      </div>
+    </div>`;
+}
+
+function rigaStorico(f) {
+  const meta = [f.method, f.event].filter(Boolean).join(" · ");
+  return `
+    <div class="history-row">
+      <div class="dot-result ${classeRisultato(f["res."])}">${letteraRisultato(f["res."])}</div>
+      <div class="history-main">
+        <div class="opp">${f.opponent || "—"}</div>
+        ${meta ? `<div class="meta">${meta}</div>` : ""}
+      </div>
+      <div class="history-date">${f.date || ""}</div>
+    </div>`;
+}
+
+function colonnaStorico(dett) {
+  const storico = dett.storico || [];
+  return `
+    <div>
+      <h3>${dett.nome} <span class="count">(${storico.length})</span></h3>
+      <div class="history-list">
+        ${storico.length ? storico.map(rigaStorico).join("") : `<div class="empty-state">Storico non disponibile.</div>`}
       </div>
     </div>`;
 }
@@ -145,6 +175,12 @@ async function aggiornaConfronto() {
       ${barraCoppia("Sconfitte", persA, persB)}
     </div>
     ${testaATesta(dA, dB)}
+
+    <div class="section-title">Storico Incontri</div>
+    <div class="history-columns">
+      ${colonnaStorico(dA)}
+      ${colonnaStorico(dB)}
+    </div>
   `;
 }
 
