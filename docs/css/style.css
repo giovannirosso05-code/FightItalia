@@ -46,6 +46,7 @@ body {
   font-size: 15px;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -356,7 +357,7 @@ h1, h2, h3, h4 {
 
 .vs-picker {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 20px;
   padding: 32px 0 8px;
@@ -414,7 +415,7 @@ h1, h2, h3, h4 {
 
 .compare-grid {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   gap: 24px;
   margin-top: 24px;
 }
@@ -433,7 +434,7 @@ h1, h2, h3, h4 {
 }
 
 .compare-col .row .k { color: var(--text-muted); }
-.compare-col .row .v { text-align: right; max-width: 65%; }
+.compare-col .row .v { text-align: right; max-width: 65%; overflow-wrap: break-word; }
 
 .compare-col.b .row { flex-direction: row-reverse; }
 .compare-col.b .row .v { text-align: left; }
@@ -557,7 +558,7 @@ h1, h2, h3, h4 {
 
 .history-columns {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 24px;
   margin: 8px 0 50px;
 }
@@ -597,7 +598,7 @@ h1, h2, h3, h4 {
 .history-row:last-child { border-bottom: none; }
 .history-row .dot-result { flex-shrink: 0; width: 22px; height: 22px; }
 
-.history-main { flex: 1; min-width: 0; }
+.history-main { flex: 1 1 auto; min-width: 0; overflow: hidden; }
 .history-main .opp { font-weight: 500; }
 .history-main .meta {
   color: var(--text-muted);
@@ -769,8 +770,17 @@ h1, h2, h3, h4 {
 
 /* ---------- Responsive ---------- */
 
+@media (max-width: 640px) {
+  .container { padding: 0 16px; }
+  .brand { font-size: 16px; gap: 6px; }
+  .nav-links { gap: 0; }
+  .nav-links a { padding: 8px 8px; font-size: 11px; letter-spacing: 0.03em; }
+  .org-grid { grid-template-columns: minmax(0, 1fr); }
+  .history-columns { grid-template-columns: minmax(0, 1fr); gap: 36px; }
+}
+
 @media (max-width: 760px) {
-  .vs-picker, .compare-grid { grid-template-columns: 1fr; }
+  .vs-picker, .compare-grid { grid-template-columns: minmax(0, 1fr); }
   .vs-divider, .vs-picker .vs-label { padding-top: 0; }
   .compare-col.b .row { flex-direction: row; }
   .compare-col.b .row .v { text-align: right; }
