@@ -56,29 +56,43 @@ Per aggiornare il sito pubblicato dopo una modifica: `git push` (o
 "Push origin" in GitHub Desktop) — GitHub Pages si aggiorna da solo in
 un minuto o due.
 
-## Cosa c'è nell'MVP
+## Cosa c'è
 
-- **Database Lottatori**: roster UFC corrente per categoria di peso, con
-  filtro e ricerca (664 lottatori all'ultimo scraping, ~660 con almeno
-  età/altezza/record).
-- **Confronto** (tale of the tape): scegli due lottatori, vedi statistiche
-  affiancate, ultimi 5 incontri, grafici fisico/record, e se si sono già
-  affrontati in passato lo storico dello scontro diretto.
-- **Eventi**: prossimi eventi UFC programmati ed eventi recenti passati,
-  con link alla pagina Wikipedia di ciascuno.
+- **Database Lottatori**: roster UFC corrente per categoria di peso, più
+  20 leggende ritirate aggiunte a mano (Khabib, Jon Jones, GSP, Anderson
+  Silva...) — filtro per categoria e ricerca per nome (684 lottatori
+  all'ultimo scraping).
+- **Confronto** (tale of the tape): scegli due lottatori (autocomplete),
+  vedi record e statistiche affiancate, ultimi 5 incontri (con banner
+  avversario/data al passaggio del mouse), storico incontri completo,
+  grafici fisico/record, e se si sono già affrontati lo scontro diretto.
+- **Eventi**: prossimi eventi UFC in ordine cronologico ed eventi recenti
+  passati, con tag "Numerato"/"Fight Night" (per non confondere le due
+  numerazioni indipendenti di UFC — es. "UFC 293" del 2023 e "UFC Fight
+  Night 293" del 2026 sono due eventi diversi).
+- **Europa**: le principali organizzazioni MMA europee (KSW, Oktagon MMA,
+  Cage Warriors, ARES FC) — paese, anno di fondazione e campioni attuali
+  per categoria di peso (dati curati a mano, non da scraping — vedi
+  Roadmap).
+- **Schede di dettaglio proprie** (`lottatore.html`, `evento.html`): non
+  si esce mai verso Wikipedia — per i lottatori usiamo i dati già
+  scaricati, per gli eventi un riassunto (con immagine) preso al volo
+  dalla API pubblica REST di Wikipedia ma mostrato dentro una pagina
+  nostra.
 
 I dati vengono scaricati una volta e messi in cache locale (cartella
-`cache/`, non versionata) — il bottone "Aggiorna dati" nella sidebar forza
-un nuovo scraping. Il dettaglio di un lottatore (reach, storico incontri)
-si scarica solo quando lo selezioni nel Confronto, non per tutti i 664 di
-colpo.
+`cache/`, non versionata). Il dettaglio di ogni lottatore con pagina
+Wikipedia viene pre-scaricato da `build_data.py` (non on-demand): il
+sito finale è completamente statico, nessun server Python in produzione.
 
 ## Roadmap (non ancora implementato)
 
-1. **Fase 2 — altre organizzazioni MMA** (incluse quelle europee: KSW,
-   Cage Warriors, Oktagon, ARES...) via Sherdog o Tapology, che coprono
-   tutte le federazioni in un unico database invece di scrivere uno
-   scraper diverso per ognuna.
+1. **Fase 2 — roster completo per le organizzazioni europee** (non solo i
+   campioni, che ci sono già — vedi sopra). Tentato via Tapology: blocca
+   le richieste automatiche con un 403 (a differenza di UFCStats/Wikipedia
+   non è aggirabile in modo pulito). Sherdog è accessibile ma non ha URL
+   di organizzazione prevedibili/stabili come UFCStats — richiede una
+   ricerca caso per caso per ogni federazione, più lenta da costruire.
 2. **Fase 3 — boxe** via BoxRec (protetto da Cloudflare, più complesso)
    oppure una Boxing Data API a pagamento come scorciatoia.
 
