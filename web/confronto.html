@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MMA Hub — Confronto Lottatori</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header id="site-header" class="site-header"></header>
+
+<section class="hero">
+  <div class="container">
+    <h1>Tale of the <span class="accent">Tape</span></h1>
+    <p>Confronta due lottatori: statistiche fisiche, record, forma recente ed eventuali scontri diretti già disputati.</p>
+  </div>
+</section>
+
+<div class="container">
+  <div class="vs-picker">
+    <div class="autocomplete" id="picker-a">
+      <input type="text" placeholder="Cerca lottatore A...">
+      <div class="autocomplete-list"></div>
+    </div>
+    <div class="vs-label">VS</div>
+    <div class="autocomplete" id="picker-b">
+      <input type="text" placeholder="Cerca lottatore B...">
+      <div class="autocomplete-list"></div>
+    </div>
+  </div>
+
+  <div id="risultato"></div>
+</div>
+
+<footer id="site-footer" class="site-footer"></footer>
+
+<script type="module" src="js/confronto.js"></script>
+</body>
+</html>

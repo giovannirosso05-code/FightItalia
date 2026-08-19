@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MMA Hub — Eventi UFC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header id="site-header" class="site-header"></header>
+
+<section class="hero">
+  <div class="container">
+    <h1>Calendario eventi <span class="accent">UFC</span></h1>
+    <p>Prossimi eventi programmati ed eventi recenti, con sede e link di approfondimento.</p>
+  </div>
+</section>
+
+<div class="container">
+  <div class="section-title">In arrivo</div>
+  <div id="eventi-prossimi"></div>
+  <div class="dazn-note">In Italia gli eventi UFC si seguono in streaming legale su DAZN.</div>
+
+  <div class="section-title">Passati <span class="count" id="passati-count"></span></div>
+  <div id="eventi-passati"></div>
+  <button class="load-more" id="load-more">Mostra altri eventi</button>
+</div>
+
+<footer id="site-footer" class="site-footer"></footer>
+
+<script type="module" src="js/eventi.js"></script>
+</body>
+</html>

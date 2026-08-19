@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MMA Hub — Database Lottatori UFC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header id="site-header" class="site-header"></header>
+
+<section class="hero">
+  <div class="container">
+    <h1>Il database <span class="accent">MMA</span> più aggiornato in italiano</h1>
+    <p>Statistiche, record e confronti su tutti i lottatori del roster UFC attuale — dati verificabili, aggiornati direttamente da Wikipedia.</p>
+    <div class="stat-strip" id="stat-strip"></div>
+  </div>
+</section>
+
+<div class="container">
+  <div class="filter-bar">
+    <div class="search-input">
+      <span id="search-icon"></span>
+      <input id="search" type="text" placeholder="Cerca un lottatore...">
+    </div>
+    <div id="category-pills" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+  </div>
+
+  <div class="section-title">Lottatori <span class="count" id="result-count"></span></div>
+  <div class="fighter-grid" id="fighter-grid"></div>
+</div>
+
+<footer id="site-footer" class="site-footer"></footer>
+
+<script type="module" src="js/roster.js"></script>
+</body>
+</html>

@@ -16,14 +16,30 @@ HTML stabili, senza protezioni anti-scraping, a patto di usare uno
 User-Agent descrittivo (richiesto dalla policy Wikimedia) — vedi
 `scraper_ufc.py`.
 
+## Architettura
+
+Sito statico vero (HTML/CSS/JS scritti a mano, nessun framework/build tool
+necessario) — Python serve solo a preparare i dati, non gira come server.
+Prima versione era in Streamlit: aveva l'aria di una dashboard interna,
+non di un sito per utenti veri, quindi è stata sostituita da `web/`.
+
+```
+scraper_ufc.py   scraping Wikipedia (roster, eventi, dettaglio lottatore) -> cache/*.csv
+build_data.py    legge la cache e genera i JSON statici in web/data/
+web/             il sito vero e proprio (index.html, confronto.html, eventi.html)
+```
+
 ## Come avviare
 
 ```powershell
 pip install -r requirements.txt
-python -m streamlit run app_streamlit.py
+python build_data.py          # genera/aggiorna web/data/ (richiede qualche minuto la prima volta)
+python -m http.server 8000 --directory web
 ```
 
-Si apre su `http://localhost:8501`.
+Si apre su `http://localhost:8000`. Rilanciare `build_data.py` ogni volta
+che si vogliono dati aggiornati (salta i lottatori già scaricati, quindi
+le run successive sono quasi istantanee).
 
 ## Cosa c'è nell'MVP
 
@@ -64,5 +80,14 @@ analisi).
 
 - `scraper_ufc.py` — scraping Wikipedia (roster, eventi, dettaglio
   lottatore) con cache su CSV locale.
-- `app_streamlit.py` — l'interfaccia (3 tab: Database, Confronto, Eventi).
-- `cache/` — CSV scaricati, rigenerabile in qualsiasi momento (gitignored).
+- `build_data.py` — genera `web/data/roster.json`, `web/data/eventi.json`
+  e un JSON per lottatore in `web/data/lottatori/`.
+- `web/` — il sito: `index.html` (database lottatori), `confronto.html`
+  (tale of the tape), `eventi.html` (calendario), `css/style.css`,
+  `js/*.js` (vanilla JS, nessuna dipendenza esterna).
+- `cache/` — CSV scaricati da Wikipedia, rigenerabile in qualsiasi momento
+  (gitignored, serve solo in locale per velocizzare `build_data.py`).
+- `web/data/` — i JSON serviti dal sito, **versionati** (non gitignored):
+  cosí il sito funziona subito anche se lo pubblichi cosí com'è su un
+  hosting statico, senza dover far girare Python in produzione. Vanno
+  rigenerati e ricommittati quando si vogliono dati più freschi.
