@@ -90,7 +90,7 @@ async function init() {
     return;
   }
 
-  document.title = `${ev.evento} — MMA Hub`;
+  document.title = `${ev.evento} — FightItalia`;
   const luogo = [ev.sede, ev.luogo].filter(Boolean).join(", ");
 
   out.innerHTML = `

@@ -55,7 +55,7 @@ async function init() {
   out.innerHTML = `
     <section class="hero" style="padding:44px 0 24px; border-bottom:none;">
       <div style="display:flex; gap:24px; align-items:flex-start; flex-wrap:wrap;">
-        ${foto ? `<img src="${foto}" alt="${dett.nome}" style="width:120px; height:120px; object-fit:cover; border-radius:var(--radius); border:1px solid var(--border-soft); flex-shrink:0;">` : ""}
+        ${foto ? `<img src="${foto}" alt="${dett.nome}" onerror="this.style.display='none'" style="width:120px; height:120px; object-fit:cover; border-radius:var(--radius); border:1px solid var(--border-soft); flex-shrink:0;">` : ""}
         <div style="flex:1; display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
           <div>
             <h1 style="font-size:clamp(28px,4vw,42px);">${dett.nome}</h1>
@@ -88,7 +88,7 @@ async function init() {
     </div>
   `;
 
-  document.title = `${dett.nome} — MMA Hub`;
+  document.title = `${dett.nome} — FightItalia`;
 }
 
 init();

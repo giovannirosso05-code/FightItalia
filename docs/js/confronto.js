@@ -82,7 +82,7 @@ function colonna(dett, chiave, record, badge) {
   const foto = inf["_immagine"];
   return `
     <div class="compare-col ${chiave}">
-      ${foto ? `<img src="${foto}" alt="${dett.nome}" style="width:72px; height:72px; object-fit:cover; border-radius:var(--radius); border:1px solid var(--border-soft); margin-bottom:10px;">` : ""}
+      ${foto ? `<img src="${foto}" alt="${dett.nome}" onerror="this.style.display='none'" style="width:72px; height:72px; object-fit:cover; border-radius:var(--radius); border:1px solid var(--border-soft); margin-bottom:10px;">` : ""}
       <h2><a href="lottatore.html?slug=${slugDaLink(dett.link)}">${dett.nome}</a></h2>
       <div class="compare-record">${record || "—"}</div>
       ${badge ? `<span class="tag numerato">${badge}</span>` : ""}

@@ -11,11 +11,13 @@ function pulisciCategoria(cat) {
 function cardLottatoreOrg(r) {
   const record = r["MMA record"] || r["MMA Record"] || "—";
   const recordOrg = r["KSW record"] || r["Oktagon record"] || null;
+  const campione = /\((c|ic)\)/i.test(r.nome || "");
+  const nomePulito = (r.nome || "").replace(/\s*\((c|ic)\)\s*/i, "");
   return `
     <div class="fighter-card">
       <div class="top-row">
         <div>
-          <div class="name">${r.nome}</div>
+          <div class="name">${nomePulito}${campione ? " 🏆" : ""}</div>
           ${r.Nickname ? `<div class="nickname">"${r.Nickname}"</div>` : ""}
         </div>
         <span class="tag">${pulisciCategoria(r.categoria)}</span>
@@ -60,7 +62,7 @@ async function init() {
   try { eventi = await fetchJSON(`data/europa/${orgId}-eventi.json`); } catch { eventi = []; }
 
   const nomeOrg = meta ? meta.nome : orgId.toUpperCase();
-  document.title = `${nomeOrg} — MMA Hub`;
+  document.title = `${nomeOrg} — FightItalia`;
 
   out.innerHTML = `
     <section class="hero" style="padding:44px 0 24px; border-bottom:none;">

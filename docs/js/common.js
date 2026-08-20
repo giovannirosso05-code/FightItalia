@@ -23,7 +23,7 @@ export function renderChrome(active) {
   if (header) {
     header.innerHTML = `
       <div class="container nav">
-        <a href="index.html" class="brand">MMA<span class="dot">•</span>HUB</a>
+        <a href="index.html" class="brand">Fight<span class="dot">•</span>Italia</a>
         <ul class="nav-links">
           <li><a href="index.html" class="${active === "database" ? "active" : ""}">Lottatori</a></li>
           <li><a href="confronto.html" class="${active === "confronto" ? "active" : ""}">Confronto</a></li>
@@ -36,7 +36,7 @@ export function renderChrome(active) {
   if (footer) {
     footer.innerHTML = `
       <div class="container">
-        MMA Hub — MVP, dati UFC da Wikipedia. In Italia gli eventi si seguono in streaming legale su DAZN.
+        FightItalia — statistiche e confronti sugli sport da combattimento, dati aggiornati da Wikipedia. In Italia gli eventi UFC si seguono in streaming legale su DAZN.
       </div>`;
   }
 }

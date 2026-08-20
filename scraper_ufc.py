@@ -15,6 +15,7 @@ richiesta e messa in cache locale, per non scaricare centinaia di pagine
 ad ogni avvio.
 """
 
+import math
 import re
 from pathlib import Path
 
@@ -49,6 +50,19 @@ def _span(cella, attributo):
     valore = str(cella.get(attributo, "1"))
     m = re.match(r"\s*(\d+)", valore)
     return int(m.group(1)) if m else 1
+
+
+def _record_puliti(records):
+    """df.where(pd.notna(df), None).to_dict('records') NON basta con
+    pandas 3.0: le colonne col nuovo dtype 'str' che contengono almeno un
+    None lo silenziano di nuovo in NaN (bug/comportamento di dtype
+    coercion), producendo un 'NaN' letterale nel JSON finale — non valido
+    per JSON.parse() nel browser, che quindi fallisce in silenzio. Qui
+    ripuliamo esplicitamente ogni valore, senza fidarci del dtype."""
+    return [
+        {k: (None if isinstance(v, float) and math.isnan(v) else v) for k, v in r.items()}
+        for r in records
+    ]
 
 
 def _testo_e_link(cella):
@@ -423,7 +437,7 @@ def scarica_card_evento(link, usa_cache=True):
 
     if usa_cache and cache_file.exists():
         df = pd.read_csv(cache_file)
-        return df.where(pd.notna(df), None).to_dict("records")
+        return _record_puliti(df.where(pd.notna(df), None).to_dict("records"))
 
     soup = _get_soup(link)
     tabella = None
@@ -468,7 +482,7 @@ def scarica_card_evento(link, usa_cache=True):
 
     df = pd.DataFrame(righe)
     df.to_csv(cache_file, index=False)
-    return df.where(pd.notna(df), None).to_dict("records") if not df.empty else []
+    return _record_puliti(df.where(pd.notna(df), None).to_dict("records")) if not df.empty else []
 
 
 if __name__ == "__main__":
