@@ -280,6 +280,16 @@ def scarica_dettaglio_lottatore(link, usa_cache=True):
         img = box.select_one("img")
         if img and img.get("src"):
             src = img["src"]
+            # la thumbnail di default e' spesso larga solo 250px (sgranata se
+            # ingrandita nella pagina lottatore) — prendiamo la versione 2x
+            # dallo srcset se c'e', altrimenti raddoppiamo la larghezza
+            # richiesta direttamente nell'URL (Wikipedia genera thumb di
+            # qualsiasi dimensione su richiesta).
+            match_2x = re.search(r"(\S+)\s+2x", img.get("srcset", ""))
+            if match_2x:
+                src = match_2x.group(1)
+            else:
+                src = re.sub(r"/(\d+)px-", lambda m: f"/{max(int(m.group(1)) * 2, 400)}px-", src)
             infobox["_immagine"] = "https:" + src if src.startswith("//") else src
         for tr in box.select("tr"):
             th = tr.find("th")

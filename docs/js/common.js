@@ -29,6 +29,7 @@ export function renderChrome(active) {
           <li><a href="confronto.html" class="${active === "confronto" ? "active" : ""}">Confronto</a></li>
           <li><a href="eventi.html" class="${active === "eventi" ? "active" : ""}">Eventi</a></li>
           <li><a href="europa.html" class="${active === "europa" ? "active" : ""}">Europa</a></li>
+          <li><a href="campioni.html" class="${active === "campioni" ? "active" : ""}">Campioni</a></li>
         </ul>
       </div>`;
   }
