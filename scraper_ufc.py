@@ -65,6 +65,92 @@ def _record_puliti(records):
     ]
 
 
+MESI_EN_IT = {
+    "January": "gennaio", "February": "febbraio", "March": "marzo", "April": "aprile",
+    "May": "maggio", "June": "giugno", "July": "luglio", "August": "agosto",
+    "September": "settembre", "October": "ottobre", "November": "novembre", "December": "dicembre",
+}
+_MESI_PATTERN = "|".join(MESI_EN_IT.keys())
+# "February 7, 1985 (age 41)" (mese-giorno-anno) o "15 May 1992 (age 34)"
+# (giorno-mese-anno, l'altro formato usato da Wikipedia a seconda della
+# pagina) — entrambi capitano, li normalizziamo allo stesso modo in output.
+_DATA_MDY = re.compile(rf"\b({_MESI_PATTERN})\s+(\d{{1,2}}),\s+(\d{{4}})\s*\(\s*age\s+(\d+)\s*\)")
+_DATA_DMY = re.compile(rf"\b(\d{{1,2}})\s+({_MESI_PATTERN})\s+(\d{{4}})\s*\(\s*age\s+(\d+)\s*\)")
+
+
+def _pulisci_testo_wiki(testo):
+    """Ripulisce artefatti comuni del text-scraping di Wikipedia:
+    - citazioni tipo '[ 1 ]' (non sono dati, sono riferimenti a note)
+    - la data ISO nascosta usata per il microformat hCard, es.
+      '( 1985-02-07 )', pensata per essere invisibile via CSS ma che il
+      semplice get_text() cattura come testo visibile
+    - spazi doppi e spazi superflui dentro le parentesi lasciati dai due
+      punti sopra."""
+    if not isinstance(testo, str):
+        return testo
+    testo = re.sub(r"\(\s*\d{4}-\d{2}-\d{2}\s*\)", "", testo)
+    testo = re.sub(r"\[\s*\d+\s*\]", "", testo)
+    testo = re.sub(r"\(\s+", "(", testo)
+    testo = re.sub(r"\s+\)", ")", testo)
+    testo = re.sub(r"\s{2,}", " ", testo).strip()
+    return testo
+
+
+def _traduci_date_e_parole(testo):
+    """Traduce in italiano le parti testuali inglesi piu' comuni nei campi
+    anagrafici: 'February 7, 1985 (age 41)' -> '7 febbraio 1985 (41 anni)',
+    'until 2022' -> 'fino al 2022', 'present' -> 'presente'."""
+    def _sub_mdy(m):
+        mese, giorno, anno, eta = m.groups()
+        return f"{int(giorno)} {MESI_EN_IT[mese]} {anno} ({eta} anni)"
+
+    def _sub_dmy(m):
+        giorno, mese, anno, eta = m.groups()
+        return f"{int(giorno)} {MESI_EN_IT[mese]} {anno} ({eta} anni)"
+
+    testo = _DATA_MDY.sub(_sub_mdy, testo)
+    testo = _DATA_DMY.sub(_sub_dmy, testo)
+    testo = re.sub(r"\buntil\s+(\d{4})\b", r"fino al \1", testo)
+    testo = re.sub(r"\bpresent\b", "presente", testo)
+    return testo
+
+
+def _swap_altezza_reach(testo):
+    """'6 ft 3 in (191 cm)' -> '191 cm (6 ft 3 in)' — la richiesta e'
+    mostrare prima l'unita' metrica, l'imperiale tra parentesi."""
+    m = re.match(r"^(.+?)\s*\(([\d.]+\s*(?:cm|m))\)\s*(.*)$", testo)
+    if not m:
+        return testo
+    imperiale, metrico, resto = m.groups()
+    return f"{metrico} ({imperiale.strip()}){(' ' + resto) if resto else ''}"
+
+
+def _swap_peso(testo):
+    """'265 lb (120 kg; 18 st 13 lb)' -> '120 kg (265 lb)' — teniamo solo
+    kg e lb (l'unita' 'stone' e' terziaria, non richiesta)."""
+    m = re.match(r"^([\d.]+)\s*lb\s*\(\s*([\d.]+)\s*kg", testo)
+    if not m:
+        return testo
+    lb, kg = m.groups()
+    return f"{kg} kg ({lb} lb)"
+
+
+def pulisci_campo_infobox(campo, valore):
+    """Punto unico di pulizia per un valore infobox: rimuove citazioni/date
+    ISO nascoste, traduce le parti testuali inglesi, e per altezza/peso/
+    reach mette l'unita' metrica per prima. Usata sia dallo scraping
+    (dati nuovi) sia dallo script di migrazione (dati gia' salvati)."""
+    if not isinstance(valore, str) or campo.startswith("_"):
+        return valore
+    valore = _pulisci_testo_wiki(valore)
+    valore = _traduci_date_e_parole(valore)
+    if campo in ("Height", "Reach"):
+        valore = _swap_altezza_reach(valore)
+    elif campo == "Weight":
+        valore = _swap_peso(valore)
+    return valore
+
+
 def _testo_e_link(cella):
     """Il rendering attuale delle pagine Wikipedia usa href assoluti
     (https://en.wikipedia.org/wiki/...) per i wikilink, non piu' solo
@@ -195,6 +281,8 @@ def scarica_roster(usa_cache=True):
     df = pd.concat(tabelle_categorie, ignore_index=True)
     df = df[[c for c in colonne if c in df.columns]]
     df = df.dropna(subset=["nome"]).reset_index(drop=True)
+    if "altezza" in df.columns:
+        df["altezza"] = df["altezza"].apply(lambda v: pulisci_campo_infobox("Height", v) if isinstance(v, str) else v)
 
     df.to_csv(cache_file, index=False)
     return df
@@ -298,7 +386,7 @@ def scarica_dettaglio_lottatore(link, usa_cache=True):
                 campo = th.get_text(" ", strip=True)
                 valore = td.get_text(" ", strip=True)
                 if campo:
-                    infobox[campo] = valore
+                    infobox[campo] = pulisci_campo_infobox(campo, valore)
 
     pd.DataFrame(
         [{"campo": k, "valore": v} for k, v in infobox.items()]
