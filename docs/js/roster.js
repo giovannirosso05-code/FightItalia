@@ -35,12 +35,13 @@ function renderStatStrip() {
   `;
 }
 
+const FILTRO_CAMPIONI = "__CAMPIONI__";
+
 function renderPills() {
   const presenti = ORDINE_CATEGORIE.filter((c) => roster.some((r) => r.categoria === c));
   const cont = document.getElementById("category-pills");
-  cont.innerHTML = presenti
-    .map((c) => `<button class="pill" data-cat="${c}">${nomeBreveCategoria(c)}</button>`)
-    .join("");
+  const pillCampioni = `<button class="pill" data-cat="${FILTRO_CAMPIONI}">🏆 Campioni (attuali ed ex)</button>`;
+  cont.innerHTML = pillCampioni + presenti.map((c) => `<button class="pill" data-cat="${c}">${nomeBreveCategoria(c)}</button>`).join("");
   cont.querySelectorAll(".pill").forEach((btn) => {
     btn.addEventListener("click", () => {
       const cat = btn.dataset.cat;
@@ -57,11 +58,12 @@ function cardLottatore(r) {
   const href = r.slug ? `lottatore.html?slug=${r.slug}` : null;
   const nome = href ? `<a href="${href}">${r.nome}</a>` : r.nome;
   const link = href ? `<a href="${href}">${icon("link")}</a>` : "";
+  const corona = r.campione_attuale ? " 🏆" : r.ex_campione ? " 🥊" : "";
   return `
     <div class="fighter-card">
       <div class="top-row">
         <div>
-          <div class="name">${nome}</div>
+          <div class="name">${nome}${corona}</div>
           ${r.soprannome ? `<div class="nickname">"${r.soprannome}"</div>` : ""}
         </div>
         <span class="tag">${nomeBreveCategoria(r.categoria)}</span>
@@ -83,7 +85,8 @@ function renderGrid() {
   // le sezioni speciali (release, sospesi...) hanno etichette troppo lunghe
   // per le card e interessano solo chi cerca quel lottatore per nome.
   if (!q && !categoriaAttiva) filtrati = filtrati.filter((r) => ORDINE_CATEGORIE.includes(r.categoria));
-  if (categoriaAttiva) filtrati = filtrati.filter((r) => r.categoria === categoriaAttiva);
+  if (categoriaAttiva === FILTRO_CAMPIONI) filtrati = filtrati.filter((r) => r.campione_attuale || r.ex_campione);
+  else if (categoriaAttiva) filtrati = filtrati.filter((r) => r.categoria === categoriaAttiva);
   if (q) filtrati = filtrati.filter((r) => r.nome.toLowerCase().includes(q));
 
   document.getElementById("result-count").textContent = `(${filtrati.length})`;

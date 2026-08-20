@@ -616,6 +616,57 @@ h1, h2, h3, h4 {
   flex-shrink: 0;
 }
 
+/* ---------- Card evento (main/prelim/early prelim) ---------- */
+
+.event-group-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin: 28px 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.bout-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+
+.bout-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+}
+
+.bout-cat {
+  flex-shrink: 0;
+  width: 130px;
+  text-align: center;
+  white-space: normal;
+}
+
+.bout-main { flex: 1 1 auto; min-width: 0; }
+
+.bout-fighters {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 14.5px;
+}
+
+.bout-fighters .bout-winner { color: var(--win); font-weight: 600; }
+.bout-vs { color: var(--text-muted); font-size: 11px; text-transform: uppercase; }
+
+.bout-result {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
 /* ---------- Eventi ---------- */
 
 .event-row {
@@ -699,6 +750,32 @@ h1, h2, h3, h4 {
 }
 
 .load-more:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ---------- Tab organizzazione (Roster / Eventi) ---------- */
+
+.org-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 32px 0 8px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.org-tab {
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-family: var(--font-display);
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.org-tab:hover { color: var(--text-secondary); }
+.org-tab.active { color: var(--text); border-bottom-color: var(--accent); }
 
 /* ---------- Europa (organizzazioni) ---------- */
 

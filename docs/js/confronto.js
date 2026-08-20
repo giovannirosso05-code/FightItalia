@@ -77,12 +77,15 @@ function rigaInfo(k, v) {
   return `<div class="row"><span class="k">${k}</span><span class="v">${v || "—"}</span></div>`;
 }
 
-function colonna(dett, chiave, record) {
+function colonna(dett, chiave, record, badge) {
   const inf = dett.infobox || {};
+  const foto = inf["_immagine"];
   return `
     <div class="compare-col ${chiave}">
+      ${foto ? `<img src="${foto}" alt="${dett.nome}" style="width:72px; height:72px; object-fit:cover; border-radius:var(--radius); border:1px solid var(--border-soft); margin-bottom:10px;">` : ""}
       <h2><a href="lottatore.html?slug=${slugDaLink(dett.link)}">${dett.nome}</a></h2>
       <div class="compare-record">${record || "—"}</div>
+      ${badge ? `<span class="tag numerato">${badge}</span>` : ""}
       ${rigaInfo("Categoria", inf["Division"])}
       ${rigaInfo("Altezza", inf["Height"])}
       ${rigaInfo("Reach", inf["Reach"])}
@@ -163,11 +166,13 @@ async function aggiornaConfronto() {
   const [vintA, persA] = numeroDaRecord(scelti.a.record_mma);
   const [vintB, persB] = numeroDaRecord(scelti.b.record_mma);
 
+  const badgeDi = (r) => (r.campione_attuale ? "Campione in carica" : r.ex_campione ? "Ex campione" : "");
+
   out.innerHTML = `
     <div class="compare-grid">
-      ${colonna(dA, "a", scelti.a.record_mma)}
+      ${colonna(dA, "a", scelti.a.record_mma, badgeDi(scelti.a))}
       <div class="vs-divider">VS</div>
-      ${colonna(dB, "b", scelti.b.record_mma)}
+      ${colonna(dB, "b", scelti.b.record_mma, badgeDi(scelti.b))}
     </div>
     <div class="bar-compare">
       ${barraCoppia("Reach (cm)", reachA, reachB)}

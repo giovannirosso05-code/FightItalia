@@ -17,11 +17,44 @@ from pathlib import Path
 
 import pandas as pd
 
-from scraper_ufc import scarica_dettaglio_lottatore, scarica_eventi, scarica_roster
+from scraper_ufc import (
+    scarica_card_evento,
+    scarica_dettaglio_lottatore,
+    scarica_eventi,
+    scarica_eventi_organizzazione_anno,
+    scarica_roster,
+    scarica_roster_organizzazione,
+)
 
 WEB_DATA = Path(__file__).parent / "docs" / "data"
 WEB_DATA_LOTTATORI = WEB_DATA / "lottatori"
+WEB_DATA_EVENTI = WEB_DATA / "eventi"
+WEB_DATA_EUROPA = WEB_DATA / "europa"
 WEB_DATA_LOTTATORI.mkdir(parents=True, exist_ok=True)
+WEB_DATA_EVENTI.mkdir(parents=True, exist_ok=True)
+WEB_DATA_EUROPA.mkdir(parents=True, exist_ok=True)
+
+# Le uniche due organizzazioni europee con una pagina Wikipedia "List of
+# current X fighters" strutturata come quella UFC (Cage Warriors e ARES FC
+# non ce l'hanno — restano solo con i campioni curati a mano in
+# europa-data.js). Anni coperti per gli eventi: 2025 e 2026 (passato
+# recente + programma dell'anno corrente).
+ORGANIZZAZIONI_EUROPA = {
+    "ksw": {
+        "roster_url": "https://en.wikipedia.org/wiki/List_of_current_Konfrontacja_Sztuk_Walki_fighters",
+        "anni_eventi": [
+            "https://en.wikipedia.org/wiki/2025_in_Konfrontacja_Sztuk_Walki",
+            "https://en.wikipedia.org/wiki/2026_in_Konfrontacja_Sztuk_Walki",
+        ],
+    },
+    "oktagon": {
+        "roster_url": "https://en.wikipedia.org/wiki/List_of_current_Oktagon_MMA_fighters",
+        "anni_eventi": [
+            "https://en.wikipedia.org/wiki/2025_in_Oktagon_MMA",
+            "https://en.wikipedia.org/wiki/2026_in_Oktagon_MMA",
+        ],
+    },
+}
 
 
 def _slug_da_link(link):
@@ -97,7 +130,17 @@ def genera_roster_e_eventi():
     eventi = scarica_eventi()
 
     roster = roster.assign(slug=roster["link"].apply(lambda l: _slug_da_link(l) if isinstance(l, str) else None))
-    roster = pd.concat([roster, _righe_leggende()], ignore_index=True)
+    # Wikipedia marca i campioni in carica con "(c)" appeso al nome nella
+    # tabella roster — lo isoliamo in un campo dedicato (per il filtro
+    # "Campioni") e puliamo il nome per la visualizzazione.
+    roster["campione_attuale"] = roster["nome"].str.contains(r"\(c\)", regex=True, na=False)
+    roster["nome"] = roster["nome"].str.replace(r"\s*\(c\)\s*", "", regex=True)
+    roster["ex_campione"] = False
+
+    leggende = _righe_leggende()
+    leggende["ex_campione"] = True
+    leggende["campione_attuale"] = False
+    roster = pd.concat([roster, leggende], ignore_index=True)
     eventi = eventi.assign(tipo=eventi["evento"].apply(_tipo_evento))
 
     (WEB_DATA / "eventi.json").write_text(
@@ -157,7 +200,67 @@ def genera_dettagli_lottatori(roster, limite=None, pausa=0.3):
     print(f"Dettagli lottatori: {fatti} scaricati ora, {saltati} gia' in cache. Totale file: {len(list(WEB_DATA_LOTTATORI.glob('*.json')))}")
 
 
+def genera_card_eventi(eventi, limite=None, pausa=0.3):
+    """Card completa (main + preliminary + early preliminary) per ogni
+    evento con una pagina Wikipedia propria — un JSON per evento in
+    docs/data/eventi/<slug>.json, scaricato dal browser solo quando si
+    apre quella scheda specifica."""
+    con_link = eventi.dropna(subset=["link"]).reset_index(drop=True)
+    con_link = con_link.assign(slug=con_link["link"].apply(_slug_da_link))
+    if limite:
+        con_link = con_link.head(limite)
+
+    fatti, saltati, vuoti = 0, 0, 0
+    for i, riga in con_link.iterrows():
+        out_file = WEB_DATA_EVENTI / f"{riga['slug']}.json"
+        if out_file.exists():
+            saltati += 1
+            continue
+
+        try:
+            card = scarica_card_evento(riga["link"])
+        except Exception as e:
+            print(f"  [{i+1}/{len(con_link)}] ERRORE {riga['evento']}: {e}")
+            continue
+
+        out_file.write_text(json.dumps(card, ensure_ascii=False), encoding="utf-8")
+        fatti += 1
+        if not card:
+            vuoti += 1
+        if fatti % 20 == 0:
+            print(f"  [{i+1}/{len(con_link)}] fatti {fatti}, ultimo: {riga['evento']}")
+        time.sleep(pausa)
+
+    print(f"Card eventi: {fatti} scaricate ora ({vuoti} vuote/non trovate), {saltati} gia' in cache.")
+
+
+def genera_europa():
+    for org, cfg in ORGANIZZAZIONI_EUROPA.items():
+        roster = scarica_roster_organizzazione(cfg["roster_url"], f"{org}_roster")
+        if not roster.empty:
+            roster = roster.assign(slug=roster["link"].apply(lambda l: _slug_da_link(l) if isinstance(l, str) else None))
+            (WEB_DATA_EUROPA / f"{org}-roster.json").write_text(
+                json.dumps(_pulisci_per_json(roster), ensure_ascii=False), encoding="utf-8"
+            )
+        print(f"{org}: {len(roster)} lottatori nel roster")
+
+        eventi_anni = []
+        for url_anno in cfg["anni_eventi"]:
+            df_anno = scarica_eventi_organizzazione_anno(url_anno)
+            if not df_anno.empty:
+                eventi_anni.append(df_anno)
+        eventi = pd.concat(eventi_anni, ignore_index=True) if eventi_anni else pd.DataFrame()
+        if not eventi.empty:
+            (WEB_DATA_EUROPA / f"{org}-eventi.json").write_text(
+                json.dumps(_pulisci_per_json(eventi), ensure_ascii=False), encoding="utf-8"
+            )
+        print(f"{org}: {len(eventi)} eventi")
+
+
 if __name__ == "__main__":
     roster = genera_roster_e_eventi()
     genera_dettagli_lottatori(roster)
     scrivi_roster_json(roster)
+
+    eventi = pd.read_json(WEB_DATA / "eventi.json")
+    genera_card_eventi(eventi)

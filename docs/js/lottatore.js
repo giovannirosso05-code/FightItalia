@@ -45,17 +45,27 @@ async function init() {
   const inf = dett.infobox || {};
   const storico = dett.storico || [];
   const categoria = (inf["Division"] || rigaRoster.categoria || "").replace(/\s*\([^)]*\)/, "");
+  const foto = inf["_immagine"];
+  const badge = rigaRoster.campione_attuale
+    ? `<span class="tag numerato">Campione in carica</span>`
+    : rigaRoster.ex_campione
+    ? `<span class="tag numerato">Ex campione</span>`
+    : "";
 
   out.innerHTML = `
     <section class="hero" style="padding:44px 0 24px; border-bottom:none;">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
-        <div>
-          <h1 style="font-size:clamp(28px,4vw,42px);">${dett.nome}</h1>
-          ${inf["Other names"] || rigaRoster.soprannome ? `<p style="margin-top:6px; font-style:italic; color:var(--text-secondary);">"${inf["Other names"] || rigaRoster.soprannome}"</p>` : ""}
-        </div>
-        <div style="text-align:right;">
-          <div style="font-family:var(--font-display); font-size:34px; color:var(--accent);">${rigaRoster.record_mma || "—"}</div>
-          <span class="tag">${categoria || "—"}</span>
+      <div style="display:flex; gap:24px; align-items:flex-start; flex-wrap:wrap;">
+        ${foto ? `<img src="${foto}" alt="${dett.nome}" style="width:120px; height:120px; object-fit:cover; border-radius:var(--radius); border:1px solid var(--border-soft); flex-shrink:0;">` : ""}
+        <div style="flex:1; display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+          <div>
+            <h1 style="font-size:clamp(28px,4vw,42px);">${dett.nome}</h1>
+            ${inf["Other names"] || rigaRoster.soprannome ? `<p style="margin-top:6px; font-style:italic; color:var(--text-secondary);">"${inf["Other names"] || rigaRoster.soprannome}"</p>` : ""}
+            ${badge ? `<div style="margin-top:8px;">${badge}</div>` : ""}
+          </div>
+          <div style="text-align:right;">
+            <div style="font-family:var(--font-display); font-size:34px; color:var(--accent);">${rigaRoster.record_mma || "—"}</div>
+            <span class="tag">${categoria || "—"}</span>
+          </div>
         </div>
       </div>
     </section>

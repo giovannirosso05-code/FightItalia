@@ -1,4 +1,4 @@
-import { fetchJSON, renderChrome, icon, slugDaLink } from "./common.js";
+import { fetchJSON, renderChrome, icon, slugDaLink, classeRisultato } from "./common.js";
 
 renderChrome(null);
 
@@ -34,6 +34,44 @@ async function riassuntoWikipedia(link) {
   }
 }
 
+function nomeConLink(nome, link) {
+  if (!nome) return "—";
+  const slug = link ? slugDaLink(link) : null;
+  return slug ? `<a href="lottatore.html?slug=${slug}">${nome}</a>` : nome;
+}
+
+function rigaIncontro(b, inCorso) {
+  const haRisultato = b.metodo && b.metodo.trim();
+  return `
+    <div class="bout-row">
+      <span class="tag bout-cat">${b.categoria || ""}</span>
+      <div class="bout-main">
+        <div class="bout-fighters">
+          <span class="${haRisultato ? "bout-winner" : ""}">${nomeConLink(b.fighter1, b.fighter1_link)}</span>
+          <span class="bout-vs">vs</span>
+          <span>${nomeConLink(b.fighter2, b.fighter2_link)}</span>
+        </div>
+        ${haRisultato ? `<div class="bout-result">${b.metodo} · Round ${b.round} · ${b.tempo}</div>` : ""}
+      </div>
+    </div>`;
+}
+
+function sezioneCard(titolo, incontri) {
+  if (!incontri.length) return "";
+  return `
+    <div class="event-group-title">${titolo}</div>
+    <div class="bout-list">${incontri.map((b) => rigaIncontro(b)).join("")}</div>`;
+}
+
+async function caricaCard(link) {
+  const slug = slugDaLink(link);
+  try {
+    return await fetchJSON(`data/eventi/${slug}.json`);
+  } catch {
+    return [];
+  }
+}
+
 async function init() {
   const params = new URLSearchParams(location.search);
   const slug = params.get("slug");
@@ -66,15 +104,28 @@ async function init() {
       ${ev.spettatori ? `<p style="margin-top:6px; color:var(--text-muted); font-size:13px;">Spettatori: ${ev.spettatori}</p>` : ""}
     </section>
 
+    <div id="card-evento" style="max-width:720px;"><div class="empty-state">Carico la card...</div></div>
     <div id="riassunto" style="max-width:640px; margin-bottom:50px;"></div>
   `;
+
+  const cardBox = document.getElementById("card-evento");
+  const card = ev.link ? await caricaCard(ev.link) : [];
+
+  if (card.length) {
+    const main = card.filter((b) => (b.sezione || "").toLowerCase().startsWith("main"));
+    const prelim = card.filter((b) => (b.sezione || "").toLowerCase().startsWith("preliminary"));
+    const early = card.filter((b) => (b.sezione || "").toLowerCase().startsWith("early"));
+    cardBox.innerHTML = sezioneCard("Main Card", main) + sezioneCard("Preliminary Card", prelim) + sezioneCard("Early Preliminary Card", early);
+  } else {
+    cardBox.innerHTML = `<div class="empty-state">Card non ancora disponibile per questo evento.</div>`;
+  }
 
   const riassuntoBox = document.getElementById("riassunto");
   const dati = ev.link ? await riassuntoWikipedia(ev.link) : null;
 
   if (dati && dati.extract) {
     riassuntoBox.innerHTML = `
-      <div class="section-title" style="margin-top:0;">Riassunto</div>
+      <div class="section-title">Riassunto</div>
       <div style="display:flex; gap:18px; align-items:flex-start;">
         ${dati.thumbnail ? `<img src="${dati.thumbnail.source}" alt="" style="width:120px; border-radius:var(--radius-sm); flex-shrink:0;">` : ""}
         <p style="color:var(--text-secondary); line-height:1.7;">${dati.extract}</p>
@@ -82,7 +133,7 @@ async function init() {
       <p style="margin-top:14px; font-size:11.5px; color:var(--text-muted);">Riassunto automatico da Wikipedia (in inglese, fonte originale).</p>
     `;
   } else {
-    riassuntoBox.innerHTML = `<div class="empty-state">Riassunto non disponibile per questo evento.</div>`;
+    riassuntoBox.innerHTML = "";
   }
 }
 

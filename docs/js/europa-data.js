@@ -1,13 +1,13 @@
 // Dati curati a mano (non da scraping automatico) sulle principali
-// organizzazioni MMA europee. I campioni riflettono l'ultima ricerca
-// disponibile — a differenza di UFC, per queste federazioni non esiste
-// un'unica fonte strutturata come Wikipedia "List of current fighters",
-// quindi qui non c'e' (ancora) un roster completo: e' un punto di
-// partenza da espandere via Sherdog/Tapology in una fase successiva
-// (vedi README, Fase 2 della roadmap).
+// organizzazioni MMA europee: campioni attuali per ciascuna. KSW e
+// Oktagon MMA hanno anche roster ed eventi completi scaricati da
+// Wikipedia (vedi organizzazione.html?org=ksw / ?org=oktagon) — Cage
+// Warriors e ARES FC non hanno una pagina "List of current fighters" su
+// Wikipedia, quindi per loro c'e' solo questo elenco campioni.
 
 export const ORGANIZZAZIONI = [
   {
+    id: "ksw",
     nome: "KSW",
     nomeCompleto: "Konfrontacja Sztuk Walki",
     paese: "🇵🇱 Polonia",
@@ -24,6 +24,7 @@ export const ORGANIZZAZIONI = [
     ],
   },
   {
+    id: "oktagon",
     nome: "Oktagon MMA",
     nomeCompleto: "Oktagon MMA",
     paese: "🇨🇿🇸🇰 Rep. Ceca / Slovacchia",

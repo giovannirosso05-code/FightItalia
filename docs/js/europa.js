@@ -11,7 +11,7 @@ function cardOrganizzazione(org) {
           <h2>${org.nome}</h2>
           <div class="org-sub">${org.nomeCompleto} · ${org.paese} · dal ${org.fondata}</div>
         </div>
-        <a href="${org.link}" target="_blank" rel="noopener" class="event-link">Wikipedia →</a>
+        ${org.id ? `<a href="organizzazione.html?org=${org.id}" class="event-link">Roster ed eventi →</a>` : ""}
       </div>
       <p class="org-desc">${org.descrizione}</p>
       <div class="champ-list">
