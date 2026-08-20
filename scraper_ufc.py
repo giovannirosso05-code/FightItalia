@@ -35,6 +35,15 @@ CACHE_DIR = Path(__file__).parent / "cache"
 CACHE_DIR.mkdir(exist_ok=True)
 
 
+def _nome_file_sicuro(testo):
+    """Sostituisce con '_' i caratteri non ammessi nei nomi file su Windows
+    (: \\ / * ? " < > |) piu' '#' — alcuni link Wikipedia (es. le pagine
+    "The Ultimate Fighter ... Finale") hanno ':' nel titolo e '#ancora' per
+    puntare a una sezione, e finivano dritti nel nome del file di cache
+    causando OSError invalid argument."""
+    return re.sub(r'[:\\/*?"<>|#]', "_", testo)
+
+
 def _get_soup(url):
     r = requests.get(url, headers=HEADERS, timeout=20)
     r.raise_for_status()
@@ -348,7 +357,7 @@ def scarica_dettaglio_lottatore(link, usa_cache=True):
     """Infobox + storico incontri di un singolo lottatore dalla sua pagina Wikipedia.
     Ritorna un dict con: nome, infobox (dict grezzo etichetta->valore),
     storico (DataFrame fight-by-fight se la tabella e' presente, altrimenti vuoto)."""
-    slug = link.rstrip("/").split("/")[-1]
+    slug = _nome_file_sicuro(link.rstrip("/").split("/")[-1])
     cache_file = CACHE_DIR / f"lottatore_{slug}.csv"
     cache_storico = CACHE_DIR / f"storico_{slug}.csv"
 
@@ -530,11 +539,18 @@ def scarica_card_evento(link, usa_cache=True):
     Ritorna una lista di dict: sezione, categoria, fighter1, fighter1_link,
     fighter2, fighter2_link, metodo, round, tempo, note. Metodo/round/tempo
     sono vuoti per gli incontri non ancora disputati."""
-    slug = link.rstrip("/").split("/")[-1]
+    slug = _nome_file_sicuro(link.rstrip("/").split("/")[-1])
     cache_file = CACHE_DIR / f"card_{slug}.csv"
 
     if usa_cache and cache_file.exists():
-        df = pd.read_csv(cache_file)
+        try:
+            df = pd.read_csv(cache_file)
+        except pd.errors.EmptyDataError:
+            # Card non ancora annunciata al momento dello scraping: la
+            # cache di una lista vuota e' un CSV senza intestazione, che
+            # read_csv non sa interpretare. E' un risultato valido (nessun
+            # incontro), non un errore.
+            return []
         return _record_puliti(df.where(pd.notna(df), None).to_dict("records"))
 
     soup = _get_soup(link)
@@ -581,6 +597,184 @@ def scarica_card_evento(link, usa_cache=True):
     df = pd.DataFrame(righe)
     df.to_csv(cache_file, index=False)
     return _record_puliti(df.where(pd.notna(df), None).to_dict("records")) if not df.empty else []
+
+
+# Mappa sede -> fuso IANA, dedotta dal campo testuale "luogo" (citta',
+# stato/provincia, paese) gia' presente nel database eventi. Serve perche'
+# ufc.com NON mostra un orario assoluto affidabile: adatta il testo al fuso
+# di chi naviga la pagina (verificato forzando fusi diversi via Chrome
+# DevTools Protocol - stesso istante UTC, etichetta diversa ogni volta).
+# Per interpretare correttamente l'orario mostrato dobbiamo quindi sapere
+# GIA' il fuso reale della sede, e forzare il browser su quello prima di
+# leggere la pagina (vedi scarica_orari_evento). Pattern degli stati/
+# province USA/Canada PRIMA dei fallback generici "United States"/"Canada",
+# altrimenti il generico vince sempre per primo match.
+_FUSI_LUOGO = [
+    (r"\bnevada\b", "America/Los_Angeles"),
+    (r"\bcalifornia\b", "America/Los_Angeles"),
+    (r"\bwashington\b", "America/Los_Angeles"),
+    (r"\boregon\b", "America/Los_Angeles"),
+    (r"\barizona\b", "America/Phoenix"),
+    (r"\butah\b", "America/Denver"),
+    (r"\bcolorado\b", "America/Denver"),
+    (r"\btexas\b", "America/Chicago"),
+    (r"\billinois\b", "America/Chicago"),
+    (r"\bminnesota\b", "America/Chicago"),
+    (r"\bwisconsin\b", "America/Chicago"),
+    (r"\blouisiana\b", "America/Chicago"),
+    (r"\bflorida\b", "America/New_York"),
+    (r"new york", "America/New_York"),
+    (r"new jersey", "America/New_York"),
+    (r"\bmassachusetts\b", "America/New_York"),
+    (r"\bohio\b", "America/New_York"),
+    (r"\bmichigan\b", "America/New_York"),
+    (r"\bgeorgia\b", "America/New_York"),
+    (r"north carolina", "America/New_York"),
+    (r"\balberta\b", "America/Edmonton"),
+    (r"\bontario\b", "America/Toronto"),
+    (r"\bquebec\b", "America/Toronto"),
+    (r"british columbia", "America/Vancouver"),
+    (r"\bmanitoba\b", "America/Winnipeg"),
+    (r"united arab emirates|abu dhabi|\bdubai\b", "Asia/Dubai"),
+    (r"saudi arabia|riyadh", "Asia/Riyadh"),
+    (r"\bqatar\b|\bdoha\b", "Asia/Qatar"),
+    (r"\bchina\b|shanghai|macau|macao|beijing", "Asia/Shanghai"),
+    (r"singapore", "Asia/Singapore"),
+    (r"\bjapan\b|tokyo|saitama", "Asia/Tokyo"),
+    (r"south korea|seoul", "Asia/Seoul"),
+    (r"philippines|manila", "Asia/Manila"),
+    (r"\bfrance\b|\bparis\b", "Europe/Paris"),
+    (r"germany|berlin|hamburg|cologne|dusseldorf", "Europe/Berlin"),
+    (r"sweden|stockholm", "Europe/Stockholm"),
+    (r"poland|gdansk|wroclaw|katowice|lodz|krakow|warsaw", "Europe/Warsaw"),
+    (r"united kingdom|england|london|manchester|liverpool|\bwales\b|cardiff|scotland|glasgow", "Europe/London"),
+    (r"ireland|dublin", "Europe/Dublin"),
+    (r"\brussia\b|moscow", "Europe/Moscow"),
+    (r"czech republic|prague", "Europe/Prague"),
+    (r"denmark|copenhagen", "Europe/Copenhagen"),
+    (r"brazil|rio de janeiro|sao paulo|são paulo|brasilia|goiania|belem|fortaleza|curitiba", "America/Sao_Paulo"),
+    (r"\bmexico\b", "America/Mexico_City"),
+    (r"argentina|buenos aires", "America/Argentina/Buenos_Aires"),
+    (r"\bperth\b", "Australia/Perth"),
+    (r"melbourne", "Australia/Melbourne"),
+    (r"sydney|\bbrisbane\b", "Australia/Sydney"),
+    (r"new zealand|auckland", "Pacific/Auckland"),
+    (r"u\.s\.|united states", "America/New_York"),  # fallback generico USA: va DOPO gli stati specifici
+    (r"\bcanada\b", "America/Toronto"),  # fallback generico Canada: va DOPO le province specifiche
+]
+
+
+def fuso_da_luogo(luogo):
+    """Fuso IANA della sede, dedotto dal campo 'luogo' gia' presente nel
+    database eventi (citta', stato/provincia, paese). Ritorna None se il
+    luogo non e' riconosciuto: meglio non mostrare un orario che mostrarne
+    uno sbagliato."""
+    if not isinstance(luogo, str):
+        return None
+    luogo_low = luogo.lower()
+    for pattern, fuso in _FUSI_LUOGO:
+        if re.search(pattern, luogo_low):
+            return fuso
+    return None
+
+
+def _slug_ufc_com(nome_evento):
+    """Indovina lo slug della pagina evento su ufc.com dal nome che usiamo
+    noi (preso da Wikipedia). Gli eventi numerati usano solo il numero
+    ("UFC 333: Volkanovski vs. Evloev" -> "ufc-333"); i Fight Night usano i
+    cognomi ("UFC Fight Night: Buckley vs. Malott" -> "ufc-fight-night-
+    buckley-vs-malott"). I Fight Night ancora senza main event annunciato
+    (es. "UFC Fight Night 293") non hanno una pagina su ufc.com: ritorna
+    None, niente da indovinare."""
+    m = re.match(r"^UFC (\d+)", nome_evento)
+    if m:
+        return f"ufc-{m.group(1)}"
+    m = re.match(r"^UFC Fight Night:\s*(.+)$", nome_evento)
+    if m:
+        import unicodedata
+        parte = unicodedata.normalize("NFKD", m.group(1)).encode("ascii", "ignore").decode("ascii").lower()
+        parte = re.sub(r"[^a-z0-9]+", "-", parte).strip("-")
+        return f"ufc-fight-night-{parte}" if parte else None
+    return None
+
+
+def _estrai_orari_da_testo(testo):
+    """Cerca il blocco 'START TIMES' nel testo reso dalla pagina evento di
+    ufc.com e ne estrae Early Prelims/Prelims/Main Card in formato 24h.
+    Il testo va letto con il fuso del browser gia' forzato sulla sede
+    (scarica_orari_evento), altrimenti gli orari sono nel fuso indovinato
+    dal sito e non hanno alcun valore."""
+    from datetime import datetime as _dt
+
+    blocco = testo.split("START TIMES", 1)
+    if len(blocco) < 2:
+        return None
+    corpo = blocco[1]
+    mappa = {"Early Prelims": "early_prelims", "Prelims": "prelims", "Main Card": "main_card"}
+    risultato = {"early_prelims": None, "prelims": None, "main_card": None}
+    for etichetta, chiave in mappa.items():
+        # "^...$" con MULTILINE: "Prelims" da solo non deve combaciare con
+        # la riga "Early Prelims" (di cui e' una sottostringa finale).
+        m = re.search(rf"^{re.escape(etichetta)}\s*$\n\s*(\d{{1,2}}:\d\d\s*[AP]M)", corpo, re.MULTILINE)
+        if m:
+            risultato[chiave] = _dt.strptime(re.sub(r"\s+", " ", m.group(1)), "%I:%M %p").strftime("%H:%M")
+    return risultato if any(risultato.values()) else None
+
+
+def scarica_orari_evento(nome_evento, luogo, usa_cache=True):
+    """Orario di inizio (Early Prelims/Prelims/Main Card) della card,
+    nel fuso REALE della sede — non nel fuso che ufc.com indovina per chi
+    naviga (vedi commento su _FUSI_LUOGO). Richiede Selenium + Edge
+    installato. Ritorna None se la sede non e' mappata, la pagina evento
+    non esiste ancora su ufc.com, o il sito non e' raggiungibile: mai un
+    orario indovinato o sbagliato."""
+    fuso = fuso_da_luogo(luogo)
+    slug = _slug_ufc_com(nome_evento)
+    if not fuso or not slug:
+        return None
+
+    cache_file = CACHE_DIR / f"orari_{slug}.csv"
+    if usa_cache and cache_file.exists():
+        riga = pd.read_csv(cache_file).where(lambda d: pd.notna(d), None).iloc[0]
+        return {
+            "fuso_sede": riga["fuso_sede"],
+            "early_prelims": riga["early_prelims"] or None,
+            "prelims": riga["prelims"] or None,
+            "main_card": riga["main_card"] or None,
+        }
+
+    try:
+        from selenium import webdriver
+        from selenium.common.exceptions import WebDriverException
+        from selenium.webdriver.common.by import By
+    except ImportError:
+        return None
+    import time as _time
+
+    options = webdriver.EdgeOptions()
+    options.add_argument("--headless=new")
+    options.add_argument("--window-size=1400,1000")
+    try:
+        driver = webdriver.Edge(options=options)
+    except WebDriverException:
+        return None
+
+    try:
+        driver.execute_cdp_cmd("Emulation.setTimezoneOverride", {"timezoneId": fuso})
+        driver.get(f"https://www.ufc.com/event/{slug}")
+        _time.sleep(5)
+        testo = driver.find_element(By.TAG_NAME, "body").text
+    except WebDriverException:
+        return None
+    finally:
+        driver.quit()
+
+    risultato = _estrai_orari_da_testo(testo)
+    if not risultato:
+        return None
+
+    pd.DataFrame([{**risultato, "fuso_sede": fuso}]).to_csv(cache_file, index=False)
+    return {**risultato, "fuso_sede": fuso}
 
 
 if __name__ == "__main__":

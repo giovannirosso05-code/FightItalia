@@ -23,6 +23,7 @@ from scraper_ufc import (
     scarica_dettaglio_lottatore,
     scarica_eventi,
     scarica_eventi_organizzazione_anno,
+    scarica_orari_evento,
     scarica_roster,
     scarica_roster_organizzazione,
 )
@@ -132,6 +133,45 @@ def _foto_da_json(path):
     return json.loads(path.read_text(encoding="utf-8")).get("infobox", {}).get("_immagine")
 
 
+def _orari_evento_italia(nome_evento, luogo, data_evento):
+    """Orari locali sede + conversione Italia (Europe/Rome, DST automatica
+    via zoneinfo) per un singolo evento futuro. Ritorna None se manca uno
+    qualsiasi degli ingredienti affidabili (fuso sede, orario da ufc.com,
+    data leggibile): mai un orario indovinato o parzialmente inventato."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    try:
+        orari = scarica_orari_evento(nome_evento, luogo)
+    except Exception as errore:
+        print(f"  [orari] {nome_evento}: scraping fallito ({errore})")
+        return None
+    if not orari:
+        return None
+    try:
+        giorno = datetime.strptime(data_evento, "%b %d, %Y").date()
+    except (ValueError, TypeError):
+        return None
+
+    fuso_sede = ZoneInfo(orari["fuso_sede"])
+    fuso_italia = ZoneInfo("Europe/Rome")
+    risultato = {"fuso_sede": orari["fuso_sede"]}
+    for chiave in ("early_prelims", "prelims", "main_card"):
+        ora_testo = orari.get(chiave)
+        if not ora_testo:
+            risultato[chiave] = None
+            continue
+        ore, minuti = (int(x) for x in ora_testo.split(":"))
+        istante_sede = datetime(giorno.year, giorno.month, giorno.day, ore, minuti, tzinfo=fuso_sede)
+        istante_italia = istante_sede.astimezone(fuso_italia)
+        risultato[chiave] = {
+            "locale": istante_sede.strftime("%H:%M"),
+            "italia": istante_italia.strftime("%H:%M"),
+            "giorno_dopo": istante_italia.date() != istante_sede.date(),
+        }
+    return risultato if any(risultato[k] for k in ("early_prelims", "prelims", "main_card")) else None
+
+
 def genera_roster_e_eventi():
     roster = scarica_roster()
     eventi = scarica_eventi()
@@ -149,6 +189,17 @@ def genera_roster_e_eventi():
     leggende["campione_attuale"] = False
     roster = pd.concat([roster, leggende], ignore_index=True)
     eventi = eventi.assign(tipo=eventi["evento"].apply(_tipo_evento))
+
+    # Orario di inizio (sede + Italia): solo per eventi futuri con card
+    # gia' annunciata su ufc.com — vedi _orari_evento_italia. Selenium apre
+    # un browser per ogni evento, quindi lo facciamo solo per il sottoinsieme
+    # "programmato" (poche decine al piu', mai per gli 800 eventi passati).
+    programmati = eventi["stato"] == "programmato"
+    print(f"Orari evento: calcolo per {programmati.sum()} eventi futuri...")
+    eventi["orari"] = None
+    eventi.loc[programmati, "orari"] = eventi.loc[programmati].apply(
+        lambda r: _orari_evento_italia(r["evento"], r["luogo"], r["data"]), axis=1
+    )
 
     (WEB_DATA / "eventi.json").write_text(
         json.dumps(_pulisci_per_json(eventi), ensure_ascii=False, indent=None), encoding="utf-8"

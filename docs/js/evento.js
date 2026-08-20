@@ -10,6 +10,30 @@ function dataEstesa(dataStr) {
   return `${d.getDate()} ${MESI[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+const ETICHETTE_ORARI = { early_prelims: "Early Prelims", prelims: "Prelims", main_card: "Main Card" };
+
+function rigaOrario(etichetta, o) {
+  if (!o) return "";
+  const italia = o.giorno_dopo ? `${o.italia} (giorno dopo)` : o.italia;
+  return `<div class="row"><span class="k">${etichetta}</span><span class="v">${o.locale} sede — ${italia} Italia</span></div>`;
+}
+
+function blocoOrari(orari) {
+  if (!orari) return "";
+  const righe = Object.entries(ETICHETTE_ORARI)
+    .map(([chiave, etichetta]) => rigaOrario(etichetta, orari[chiave]))
+    .join("");
+  if (!righe) return "";
+  return `
+    <div style="margin-top:20px; max-width:420px;">
+      <div class="section-title" style="margin-top:0;">Orario di inizio</div>
+      <div class="compare-col a">${righe}</div>
+      <p style="margin-top:8px; font-size:11.5px; color:var(--text-muted);">
+        Fuso sede: ${orari.fuso_sede}. Orario Italia calcolato automaticamente (cambio ora legale incluso). Fonte: ufc.com.
+      </p>
+    </div>`;
+}
+
 function tagTipo(tipo) {
   if (tipo === "Numerato") return `<span class="tag numerato">Numerato</span>`;
   if (tipo === "Fight Night") return `<span class="tag fight-night">Fight Night</span>`;
@@ -122,6 +146,7 @@ async function init() {
       </div>
       ${luogo ? `<p style="margin-top:14px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">${icon("pin")} ${luogo}</p>` : ""}
       ${ev.spettatori ? `<p style="margin-top:6px; color:var(--text-muted); font-size:13px;">Spettatori: ${ev.spettatori}</p>` : ""}
+      ${blocoOrari(ev.orari)}
     </section>
 
     <div id="card-evento" style="max-width:720px;"><div class="empty-state">Carico la card...</div></div>
