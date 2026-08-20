@@ -183,12 +183,20 @@ async function init() {
   setupAutocomplete("a");
   setupAutocomplete("b");
 
-  const conPagina = opzioni.filter((o) => ORDINE_CATEGORIE.includes(o.categoria));
-  if (conPagina.length >= 2) {
-    scelti.a = conPagina[0];
-    scelti.b = conPagina[1];
-    document.querySelector("#picker-a input").value = conPagina[0].nome;
-    document.querySelector("#picker-b input").value = conPagina[1].nome;
+  // Arrivando da un link "Confronta" sulla scheda di un incontro futuro
+  // (evento.html) i due lottatori sono gia' scelti: precompiliamo invece
+  // di far ripartire l'utente da zero con l'autocomplete.
+  const params = new URLSearchParams(location.search);
+  const slugA = params.get("a");
+  const slugB = params.get("b");
+  const daLink = slugA && slugB ? [opzioni.find((o) => o.slug === slugA), opzioni.find((o) => o.slug === slugB)] : null;
+
+  const [primo, secondo] = daLink && daLink[0] && daLink[1] ? daLink : opzioni.filter((o) => ORDINE_CATEGORIE.includes(o.categoria));
+  if (primo && secondo) {
+    scelti.a = primo;
+    scelti.b = secondo;
+    document.querySelector("#picker-a input").value = primo.nome;
+    document.querySelector("#picker-b input").value = secondo.nome;
     aggiornaConfronto();
   }
 }

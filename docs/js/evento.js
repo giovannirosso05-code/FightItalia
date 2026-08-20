@@ -77,6 +77,7 @@ function confrontoRapidoBout(rigaA, rigaB) {
       <span class="k">Record</span>
       <span>${rigaB.record_mma || "—"}</span>
       ${eta ? `<span>${rigaA.eta}</span><span class="k">Età</span><span>${rigaB.eta}</span>` : ""}
+      <a href="confronto.html?a=${rigaA.slug}&b=${rigaB.slug}" class="bout-confronto-link">Confronta →</a>
     </div>`;
 }
 
