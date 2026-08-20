@@ -37,7 +37,8 @@ export function renderChrome(active) {
   if (footer) {
     footer.innerHTML = `
       <div class="container">
-        FightItalia — statistiche e confronti sugli sport da combattimento, dati aggiornati da Wikipedia. In Italia gli eventi UFC si seguono in streaming legale su DAZN.
+        <p style="margin:0 0 6px;">I dati riportati hanno scopo informativo e statistico; non costituiscono consiglio di scommessa. Gioca responsabilmente.</p>
+        <p style="margin:0;">FightItalia — statistiche e confronti sugli sport da combattimento. Dati e immagini da Wikipedia (licenza CC BY-SA), aggiornati periodicamente. In Italia gli eventi UFC si seguono in streaming legale su DAZN.</p>
       </div>`;
   }
 }
@@ -78,6 +79,20 @@ export function debounce(fn, wait = 200) {
     clearTimeout(t);
     t = setTimeout(() => fn(...args), wait);
   };
+}
+
+export function formDots(storico, n = 5) {
+  if (!storico || !storico.length) return "";
+  const ultimi = storico.slice(0, n);
+  return `<div class="form-dots">${ultimi
+    .map(
+      (f) => `
+      <div class="dot-result ${classeRisultato(f["res."])}" tabindex="0">
+        ${letteraRisultato(f["res."])}
+        <span class="dot-tooltip">${f["res."] || ""} vs ${f.opponent || "?"}<br>${f.method || ""}<br>${f.date || ""}</span>
+      </div>`
+    )
+    .join("")}</div>`;
 }
 
 export function slugDaLink(link) {

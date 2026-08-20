@@ -13,6 +13,7 @@ docs/data/lottatori/<slug>.json, scaricato dal browser solo quando serve.
 import json
 import re
 import time
+from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -153,6 +154,10 @@ def genera_roster_e_eventi():
         json.dumps(_pulisci_per_json(eventi), ensure_ascii=False, indent=None), encoding="utf-8"
     )
     print(f"eventi.json: {len(eventi)} eventi")
+
+    (WEB_DATA / "meta.json").write_text(
+        json.dumps({"ultimo_aggiornamento": date.today().isoformat()}), encoding="utf-8"
+    )
     return roster
 
 
@@ -202,6 +207,7 @@ def genera_dettagli_lottatori(roster, limite=None, pausa=0.3):
             "link": riga["link"],
             "infobox": dettaglio["infobox"],
             "storico": _pulisci_per_json(storico) if not storico.empty else [],
+            "ultimo_aggiornamento": date.today().isoformat(),
         }
         out_file.write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
         fatti += 1

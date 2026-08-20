@@ -26,13 +26,32 @@ function nomeBreveCategoria(cat) {
   return cat.replace(/\s*\([^)]*\)/, "");
 }
 
-function renderStatStrip() {
+function dataItaliana(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  return isNaN(d) ? null : d.toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" });
+}
+
+function renderStatStrip(ultimoAgg) {
   const categorie = new Set(roster.map((r) => r.categoria).filter((c) => ORDINE_CATEGORIE.includes(c)));
   document.getElementById("stat-strip").innerHTML = `
     <div class="stat"><div class="value">${roster.length}</div><div class="label">Lottatori</div></div>
     <div class="stat"><div class="value">${categorie.size}</div><div class="label">Categorie di peso</div></div>
-    <div class="stat"><div class="value">Wikipedia</div><div class="label">Fonte dati</div></div>
+    <div class="stat"><div class="value">${ultimoAgg ? dataItaliana(ultimoAgg) : "—"}</div><div class="label">Ultimo aggiornamento</div></div>
   `;
+}
+
+function cardEvidenza(r) {
+  const href = r.slug ? `lottatore.html?slug=${r.slug}` : "#";
+  const foto = r.foto ? `<img src="${r.foto}" alt="" onerror="this.parentElement.classList.add('senza-foto')" class="champ-foto">` : "";
+  return `
+    <a href="${href}" class="champ-card${r.foto ? "" : " senza-foto"}" style="aspect-ratio:3/4;">
+      ${foto}
+      <div class="champ-overlay">
+        <span class="champ-div">${nomeBreveCategoria(r.categoria)}</span>
+        <div class="champ-nome-grande" style="font-size:16px;">${r.nome}</div>
+      </div>
+    </a>`;
 }
 
 const FILTRO_CAMPIONI = "__CAMPIONI__";
@@ -110,10 +129,17 @@ function renderGrid() {
 
 async function init() {
   roster = await fetchJSON("data/roster.json");
-  renderStatStrip();
+  let meta = {};
+  try { meta = await fetchJSON("data/meta.json"); } catch { meta = {}; }
+
+  renderStatStrip(meta.ultimo_aggiornamento);
   renderPills();
   renderGrid();
   document.getElementById("search").addEventListener("input", debounce(renderGrid, 120));
+
+  const inEvidenza = ORDINE_CATEGORIE.map((cat) => roster.find((r) => r.categoria === cat && r.campione_attuale)).filter(Boolean).slice(0, 4);
+  document.getElementById("in-evidenza").innerHTML = inEvidenza.map(cardEvidenza).join("");
+  document.getElementById("riassunto-nota").innerHTML = `Campioni attuali per categoria — <a href="campioni.html" style="text-decoration:underline;">vedi tutti i campioni e le leggende →</a>`;
 }
 
 init();

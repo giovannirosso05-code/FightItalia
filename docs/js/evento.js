@@ -40,8 +40,28 @@ function nomeConLink(nome, link) {
   return slug ? `<a href="lottatore.html?slug=${slug}">${nome}</a>` : nome;
 }
 
-function rigaIncontro(b, inCorso) {
+// Confronto rapido dentro la card del match: solo se ENTRAMBI i lottatori
+// sono nel nostro database (il roster copre solo UFC attuale + leggende,
+// molti nomi di prelim/undercard non ci sono — in quel caso si mostrano
+// solo i nomi, senza dati, invece di un blocco vuoto).
+function confrontoRapidoBout(rigaA, rigaB) {
+  if (!rigaA || !rigaB) return "";
+  const eta = rigaA.eta && rigaB.eta ? `${rigaA.eta} — ${rigaB.eta} anni` : null;
+  return `
+    <div class="bout-confronto">
+      <span>${rigaA.record_mma || "—"}</span>
+      <span class="k">Record</span>
+      <span>${rigaB.record_mma || "—"}</span>
+      ${eta ? `<span>${rigaA.eta}</span><span class="k">Età</span><span>${rigaB.eta}</span>` : ""}
+    </div>`;
+}
+
+function rigaIncontro(b, roster) {
   const haRisultato = b.metodo && b.metodo.trim();
+  const slugA = b.fighter1_link ? slugDaLink(b.fighter1_link) : null;
+  const slugB = b.fighter2_link ? slugDaLink(b.fighter2_link) : null;
+  const rigaA = slugA ? roster.find((r) => r.slug === slugA) : null;
+  const rigaB = slugB ? roster.find((r) => r.slug === slugB) : null;
   return `
     <div class="bout-row">
       <span class="tag bout-cat">${b.categoria || ""}</span>
@@ -51,16 +71,16 @@ function rigaIncontro(b, inCorso) {
           <span class="bout-vs">vs</span>
           <span>${nomeConLink(b.fighter2, b.fighter2_link)}</span>
         </div>
-        ${haRisultato ? `<div class="bout-result">${b.metodo} · Round ${b.round} · ${b.tempo}</div>` : ""}
+        ${haRisultato ? `<div class="bout-result">${b.metodo} · Round ${b.round} · ${b.tempo}</div>` : confrontoRapidoBout(rigaA, rigaB)}
       </div>
     </div>`;
 }
 
-function sezioneCard(titolo, incontri) {
+function sezioneCard(titolo, incontri, roster) {
   if (!incontri.length) return "";
   return `
     <div class="event-group-title">${titolo}</div>
-    <div class="bout-list">${incontri.map((b) => rigaIncontro(b)).join("")}</div>`;
+    <div class="bout-list">${incontri.map((b) => rigaIncontro(b, roster)).join("")}</div>`;
 }
 
 async function caricaCard(link) {
@@ -109,13 +129,15 @@ async function init() {
   `;
 
   const cardBox = document.getElementById("card-evento");
-  const card = ev.link ? await caricaCard(ev.link) : [];
+  const [card, roster] = ev.link
+    ? await Promise.all([caricaCard(ev.link), fetchJSON("data/roster.json").catch(() => [])])
+    : [[], []];
 
   if (card.length) {
     const main = card.filter((b) => (b.sezione || "").toLowerCase().startsWith("main"));
     const prelim = card.filter((b) => (b.sezione || "").toLowerCase().startsWith("preliminary"));
     const early = card.filter((b) => (b.sezione || "").toLowerCase().startsWith("early"));
-    cardBox.innerHTML = sezioneCard("Main Card", main) + sezioneCard("Preliminary Card", prelim) + sezioneCard("Early Preliminary Card", early);
+    cardBox.innerHTML = sezioneCard("Main Card", main, roster) + sezioneCard("Preliminary Card", prelim, roster) + sezioneCard("Early Preliminary Card", early, roster);
   } else {
     cardBox.innerHTML = `<div class="empty-state">Card non ancora disponibile per questo evento.</div>`;
   }

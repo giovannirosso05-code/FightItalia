@@ -1,6 +1,6 @@
 import {
   fetchJSON, renderChrome, cmDaStringa, numeroDaRecord,
-  classeRisultato, letteraRisultato, debounce, slugDaLink,
+  classeRisultato, letteraRisultato, debounce, slugDaLink, formDots,
 } from "./common.js";
 
 renderChrome("confronto");
@@ -59,20 +59,6 @@ function setupAutocomplete(chiave) {
   });
 }
 
-function formDots(storico, chiave) {
-  if (!storico || !storico.length) return "";
-  const ultimi = storico.slice(0, 5);
-  return `<div class="form-dots">${ultimi
-    .map(
-      (f) => `
-      <div class="dot-result ${classeRisultato(f["res."])}" tabindex="0">
-        ${letteraRisultato(f["res."])}
-        <span class="dot-tooltip">vs ${f.opponent || "?"}<br>${f.date || ""}</span>
-      </div>`
-    )
-    .join("")}</div>`;
-}
-
 function rigaInfo(k, v) {
   return `<div class="row"><span class="k">${k}</span><span class="v">${v || "—"}</span></div>`;
 }
@@ -91,7 +77,7 @@ function colonna(dett, chiave, record, badge) {
       ${rigaInfo("Reach", inf["Reach"])}
       ${rigaInfo("Team", inf["Team"])}
       ${rigaInfo("Attivo dal", inf["Years active"])}
-      ${formDots(dett.storico, chiave)}
+      ${formDots(dett.storico)}
     </div>`;
 }
 
