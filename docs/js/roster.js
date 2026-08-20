@@ -58,13 +58,22 @@ function cardLottatore(r) {
   const href = r.slug ? `lottatore.html?slug=${r.slug}` : null;
   const nome = href ? `<a href="${href}">${r.nome}</a>` : r.nome;
   const link = href ? `<a href="${href}">${icon("link")}</a>` : "";
-  const corona = r.campione_attuale ? " 🏆" : r.ex_campione ? " 🥊" : "";
+  const badge = r.campione_attuale
+    ? `<span class="tag numerato">🏆 Campione</span>`
+    : r.ex_campione
+    ? `<span class="tag numerato">🥊 Ex campione</span>`
+    : "";
+  const foto = r.foto
+    ? `<img src="${r.foto}" alt="" onerror="this.style.display='none'" class="card-foto">`
+    : `<div class="card-foto card-foto-placeholder">${(r.nome || "?").charAt(0)}</div>`;
   return `
     <div class="fighter-card">
       <div class="top-row">
-        <div>
-          <div class="name">${nome}${corona}</div>
+        ${foto}
+        <div style="flex:1; min-width:0;">
+          <div class="name">${nome}</div>
           ${r.soprannome ? `<div class="nickname">"${r.soprannome}"</div>` : ""}
+          ${badge ? `<div style="margin-top:4px;">${badge}</div>` : ""}
         </div>
         <span class="tag">${nomeBreveCategoria(r.categoria)}</span>
       </div>

@@ -125,6 +125,12 @@ def _record_da_storico_json(path):
     return f"{vinte}–{perse}"
 
 
+def _foto_da_json(path):
+    if not path.exists():
+        return None
+    return json.loads(path.read_text(encoding="utf-8")).get("infobox", {}).get("_immagine")
+
+
 def genera_roster_e_eventi():
     roster = scarica_roster()
     eventi = scarica_eventi()
@@ -158,6 +164,12 @@ def scrivi_roster_json(roster):
     mask = roster["categoria"] == CATEGORIA_LEGGENDE
     roster.loc[mask, "record_mma"] = roster.loc[mask, "slug"].apply(
         lambda s: _record_da_storico_json(WEB_DATA_LOTTATORI / f"{s}.json")
+    )
+    # La foto vive nel JSON per-lottatore (scaricato da genera_dettagli_lottatori),
+    # non nella pagina roster — la copiamo qui cosi' anche le card della
+    # lista lottatori (non solo Confronto/scheda singola) possono mostrarla.
+    roster["foto"] = roster["slug"].apply(
+        lambda s: _foto_da_json(WEB_DATA_LOTTATORI / f"{s}.json") if isinstance(s, str) else None
     )
     (WEB_DATA / "roster.json").write_text(
         json.dumps(_pulisci_per_json(roster), ensure_ascii=False, indent=None), encoding="utf-8"
