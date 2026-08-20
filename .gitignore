@@ -4,3 +4,4 @@ cache/
 .venv/
 venv/
 .claude/
+audit_report.txt
