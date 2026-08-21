@@ -133,6 +133,27 @@ def _foto_da_json(path):
     return json.loads(path.read_text(encoding="utf-8")).get("infobox", {}).get("_immagine")
 
 
+def _cm_da_stringa(testo):
+    """Le stringhe Height/Reach nell'infobox mostrano il metrico per primo
+    (vedi migrazione dati Wikipedia), es. '191 cm (6 ft 3 in)' — ma
+    Wikipedia esprime l'altezza in metri per alcuni lottatori invece che in
+    cm, es. '1.88 m (6 ft 2 in)': gestiamo entrambe le unita'."""
+    if not isinstance(testo, str):
+        return None
+    m = re.match(r"([\d.]+)\s*(cm|m)\b", testo.strip())
+    if not m:
+        return None
+    valore = float(m.group(1))
+    return valore * 100 if m.group(2) == "m" else valore
+
+
+def _fisico_da_json(path):
+    if not path.exists():
+        return None, None
+    inf = json.loads(path.read_text(encoding="utf-8")).get("infobox", {})
+    return _cm_da_stringa(inf.get("Height")), _cm_da_stringa(inf.get("Reach"))
+
+
 def _orari_evento_italia(nome_evento, luogo, data_evento):
     """Orari locali sede + conversione Italia (Europe/Rome, DST automatica
     via zoneinfo) per un singolo evento futuro. Ritorna None se manca uno
@@ -227,6 +248,23 @@ def scrivi_roster_json(roster):
     roster["foto"] = roster["slug"].apply(
         lambda s: _foto_da_json(WEB_DATA_LOTTATORI / f"{s}.json") if isinstance(s, str) else None
     )
+
+    # Percentile di altezza/reach nella propria categoria di peso (es. "piu'
+    # alto dell'80% dei massimi"): calcolato qui, non nel browser, perche'
+    # richiederebbe scaricare il JSON di ogni lottatore della categoria solo
+    # per confrontarne due. "Leggende" non e' una vera categoria di peso
+    # (mischia pesi diversi), quindi resta esclusa dal calcolo.
+    fisico = roster["slug"].apply(
+        lambda s: pd.Series(_fisico_da_json(WEB_DATA_LOTTATORI / f"{s}.json") if isinstance(s, str) else (None, None))
+    )
+    roster[["altezza_cm", "reach_cm"]] = fisico
+    con_percentile = roster["categoria"] != CATEGORIA_LEGGENDE
+    for campo, percentile in (("altezza_cm", "percentile_altezza"), ("reach_cm", "percentile_reach")):
+        roster[percentile] = None
+        roster.loc[con_percentile, percentile] = (
+            roster.loc[con_percentile].groupby("categoria")[campo].rank(pct=True) * 100
+        ).round()
+
     (WEB_DATA / "roster.json").write_text(
         json.dumps(_pulisci_per_json(roster), ensure_ascii=False, indent=None), encoding="utf-8"
     )

@@ -46,7 +46,9 @@ export function renderChrome(active) {
 
 export function cmDaStringa(testo) {
   if (typeof testo !== "string") return null;
-  const m = testo.match(/\(([\d.]+)\s*(cm|m)\)/);
+  // Es. "191 cm (6 ft 3 in)" o, per alcuni lottatori, "1.88 m (6 ft 2 in)"
+  // — il valore metrico sta prima dell'unita', fuori dalle parentesi.
+  const m = testo.trim().match(/^([\d.]+)\s*(cm|m)\b/);
   if (!m) return null;
   const valore = parseFloat(m[1]);
   return Math.round((m[2] === "m" ? valore * 100 : valore) * 10) / 10;
