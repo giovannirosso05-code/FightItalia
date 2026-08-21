@@ -64,10 +64,19 @@ function nomeConLink(nome, link) {
   return slug ? `<a href="lottatore.html?slug=${slug}">${nome}</a>` : nome;
 }
 
-// Confronto rapido dentro la card del match: solo se ENTRAMBI i lottatori
+// "Confronta ->" verso il Tale of the Tape: solo se ENTRAMBI i lottatori
 // sono nel nostro database (il roster copre solo UFC attuale + leggende,
-// molti nomi di prelim/undercard non ci sono — in quel caso si mostrano
-// solo i nomi, senza dati, invece di un blocco vuoto).
+// molti nomi di prelim/undercard non ci sono — in quel caso non c'e' una
+// scheda a cui linkare, quindi niente link invece di uno rotto).
+function linkConfronta(rigaA, rigaB) {
+  if (!rigaA || !rigaB) return "";
+  return `<a href="confronto.html?a=${rigaA.slug}&b=${rigaB.slug}" class="bout-confronto-link">Confronta →</a>`;
+}
+
+// Confronto rapido dentro la card del match, per gli incontri non ancora
+// disputati: oltre al link, anche record ed eta' affiancati a colpo
+// d'occhio (per gli incontri gia' disputati c'e' gia' il risultato, non
+// serve ripetere questi dati — vedi rigaIncontro).
 function confrontoRapidoBout(rigaA, rigaB) {
   if (!rigaA || !rigaB) return "";
   const eta = rigaA.eta && rigaB.eta ? `${rigaA.eta} — ${rigaB.eta} anni` : null;
@@ -77,7 +86,7 @@ function confrontoRapidoBout(rigaA, rigaB) {
       <span class="k">Record</span>
       <span>${rigaB.record_mma || "—"}</span>
       ${eta ? `<span>${rigaA.eta}</span><span class="k">Età</span><span>${rigaB.eta}</span>` : ""}
-      <a href="confronto.html?a=${rigaA.slug}&b=${rigaB.slug}" class="bout-confronto-link">Confronta →</a>
+      ${linkConfronta(rigaA, rigaB)}
     </div>`;
 }
 
@@ -96,7 +105,11 @@ function rigaIncontro(b, roster) {
           <span class="bout-vs">vs</span>
           <span>${nomeConLink(b.fighter2, b.fighter2_link)}</span>
         </div>
-        ${haRisultato ? `<div class="bout-result">${b.metodo} · Round ${b.round} · ${b.tempo}</div>` : confrontoRapidoBout(rigaA, rigaB)}
+        ${
+          haRisultato
+            ? `<div class="bout-result"><span>${b.metodo} · Round ${b.round} · ${b.tempo}</span>${linkConfronta(rigaA, rigaB)}</div>`
+            : confrontoRapidoBout(rigaA, rigaB)
+        }
       </div>
     </div>`;
 }
