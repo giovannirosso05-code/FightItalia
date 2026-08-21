@@ -50,6 +50,17 @@ Si apre su `http://localhost:8000`. Rilanciare `build_data.py` ogni volta
 che si vogliono dati aggiornati (salta tutto ciò che è già scaricato,
 quindi le run successive sono quasi istantanee).
 
+Per la sezione News serve una chiave Gemini gratuita (da
+[Google AI Studio](https://aistudio.google.com/apikey)) in un file `.env`
+nella root del progetto (`GEMINI_API_KEY=...`, gitignored):
+```powershell
+python build_news.py          # aggiorna docs/data/news.json — va rilanciato ogni 2-3 ore
+```
+Il piano gratuito ha un limite di richieste basso: lo script riprova con
+backoff e, se il limite persiste, si ferma dopo al più 20 articoli nuovi
+per run e riprende da dove aveva lasciato alla run successiva (gli
+articoli già riscritti restano in cache, non vengono richiesti due volte).
+
 Per rigenerare anche KSW/Oktagon (roster+eventi Europa):
 ```powershell
 python -c "from build_data import genera_europa; genera_europa()"
@@ -91,6 +102,14 @@ DNS del registrar + Settings → Pages → Custom domain sul repository.
   Roster (lottatori reali, non solo campioni) ed Eventi (2025-2026) — dati
   veri da Wikipedia, non link esterni. Cage Warriors e ARES FC restano
   solo con l'elenco campioni (vedi sopra sul perché).
+- **News**: ultimi articoli MMA/UFC da 4 feed RSS in inglese (BJPenn.com,
+  MMA Mania, MMA Fighting, LowKick MMA — MMA Junkie escluso, il suo feed
+  non è raggiungibile), riscritti da zero in italiano con Gemini (titolo +
+  riassunto in 2-3 frasi, mai una traduzione letterale), con link diretto
+  all'articolo originale e nome della fonte. `build_news.py` va rilanciato
+  periodicamente (ogni 2-3 ore, non in tempo reale): ogni articolo viene
+  riscritto una sola volta e tenuto in cache (`cache/news_cache.json`), un
+  feed irraggiungibile viene saltato senza bloccare gli altri.
 - **Schede di dettaglio proprie** (`lottatore.html`, `evento.html`): non
   si esce mai verso Wikipedia — per i lottatori UFC usiamo i dati già
   scaricati (inclusa la card completa per evento), per gli eventi UFC un
@@ -148,12 +167,16 @@ analisi), più eventualmente pubblicità display e affiliazione DAZN
   cache: `roster.json`, `eventi.json`, un JSON per lottatore in
   `lottatori/`, un JSON per evento in `eventi/`, e per Europa
   `europa/{ksw,oktagon}-{roster,eventi}.json`.
+- `build_news.py` — legge i 4 feed RSS, riscrive titolo e riassunto in
+  italiano con Gemini (chiave in `.env`, variabile `GEMINI_API_KEY`) e
+  genera `docs/data/news.json`. Cache su `cache/news_cache.json` (per
+  articolo, non richiama Gemini due volte sullo stesso).
 - `docs/` — il sito: `index.html` (database lottatori), `confronto.html`
   (tale of the tape), `eventi.html` (calendario), `europa.html`
   (organizzazioni europee), `organizzazione.html` (roster/eventi di una
   singola organizzazione europea), `lottatore.html`/`evento.html` (schede
-  di dettaglio UFC), `css/style.css`, `js/*.js` (vanilla JS, nessuna
-  dipendenza esterna).
+  di dettaglio UFC), `news.html` (ultime notizie), `css/style.css`,
+  `js/*.js` (vanilla JS, nessuna dipendenza esterna).
 - `cache/` — CSV scaricati da Wikipedia, rigenerabile in qualsiasi
   momento (gitignored, serve solo in locale per velocizzare
   `build_data.py`).
