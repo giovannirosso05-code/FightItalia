@@ -1,4 +1,4 @@
-import { fetchJSON, renderChrome, classeRisultato, letteraRisultato, formDots, cmDaStringa, numeroDaRecord, debounce } from "./common.js";
+import { fetchJSON, renderChrome, classeRisultato, letteraRisultato, formDots, cmDaStringa, numeroDaRecord, debounce, metodoVittorie, badgeStreak } from "./common.js";
 
 renderChrome(null);
 
@@ -22,6 +22,19 @@ function rigaStorico(f) {
 function campoInfobox(k, v) {
   if (!v) return "";
   return `<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`;
+}
+
+function pannelloComeVince(storico) {
+  const m = metodoVittorie(storico);
+  if (!m.totale) return "";
+  const pct = (n) => Math.round((n / m.totale) * 100);
+  return `
+    <div class="section-title" style="margin-top:40px;">Come vince</div>
+    <div class="compare-col a" style="max-width:520px;">
+      ${campoInfobox("KO/TKO", `${m.ko} (${pct(m.ko)}%)`)}
+      ${campoInfobox("Sottomissione", `${m.sub} (${pct(m.sub)}%)`)}
+      ${campoInfobox("Decisione", `${m.dec} (${pct(m.dec)}%)`)}
+    </div>`;
 }
 
 function dataItaliana(iso) {
@@ -184,8 +197,10 @@ async function init() {
         ${campoInfobox("Attivo dal", inf["Years active"])}
         ${rigaAvanzate}
       </div>
-      ${storico.length ? `<div style="margin-top:6px;"><span class="row .k" style="color:var(--text-muted); font-size:12px;">Ultimi 5 incontri</span><div style="margin-top:6px;">${formDots(storico)}</div></div>` : ""}
+      ${storico.length ? `<div style="margin-top:6px;"><span class="row .k" style="color:var(--text-muted); font-size:12px;">Ultimi 5 incontri</span><div style="margin-top:6px;">${formDots(storico)}${badgeStreak(storico)}</div></div>` : ""}
     </div>
+
+    ${pannelloComeVince(storico)}
 
     <div class="section-title" style="margin-top:40px;">Testa a testa</div>
     <div id="tt-picker" style="max-width:520px;"></div>

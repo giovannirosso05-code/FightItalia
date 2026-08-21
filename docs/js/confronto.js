@@ -1,6 +1,7 @@
 import {
   fetchJSON, renderChrome, cmDaStringa, numeroDaRecord,
   classeRisultato, letteraRisultato, debounce, slugDaLink, formDots,
+  metodoVittorie, badgeStreak,
 } from "./common.js";
 
 renderChrome("confronto");
@@ -78,18 +79,19 @@ function colonna(dett, chiave, record, badge) {
       ${rigaInfo("Team", inf["Team"])}
       ${rigaInfo("Attivo dal", inf["Years active"])}
       ${formDots(dett.storico)}
+      ${badgeStreak(dett.storico)}
     </div>`;
 }
 
-function barraCoppia(label, valA, valB) {
+function barraCoppia(label, valA, valB, unita = "") {
   const a = valA || 0, b = valB || 0;
   const tot = a + b || 1;
   return `
     <div class="metric">
       <div class="label">${label}</div>
       <div class="pair">
-        <div class="bar a" style="width:${(a / tot) * 100}%">${valA ?? "—"}</div>
-        <div class="bar b" style="width:${(b / tot) * 100}%">${valB ?? "—"}</div>
+        <div class="bar a" style="width:${(a / tot) * 100}%">${valA != null ? valA + unita : "—"}</div>
+        <div class="bar b" style="width:${(b / tot) * 100}%">${valB != null ? valB + unita : "—"}</div>
       </div>
     </div>`;
 }
@@ -152,6 +154,9 @@ async function aggiornaConfronto() {
   const [vintA, persA] = numeroDaRecord(scelti.a.record_mma);
   const [vintB, persB] = numeroDaRecord(scelti.b.record_mma);
 
+  const metA = metodoVittorie(dA.storico), metB = metodoVittorie(dB.storico);
+  const pct = (n, tot) => (tot ? Math.round((n / tot) * 100) : null);
+
   const badgeDi = (r) => (r.campione_attuale ? "Campione in carica" : r.ex_campione ? "Ex campione" : "");
 
   out.innerHTML = `
@@ -165,6 +170,8 @@ async function aggiornaConfronto() {
       ${barraCoppia("Altezza (cm)", altezzaA, altezzaB)}
       ${barraCoppia("Vittorie", vintA, vintB)}
       ${barraCoppia("Sconfitte", persA, persB)}
+      ${barraCoppia("Vittorie per KO/TKO", pct(metA.ko, metA.totale), pct(metB.ko, metB.totale), "%")}
+      ${barraCoppia("Vittorie per sottomissione", pct(metA.sub, metA.totale), pct(metB.sub, metB.totale), "%")}
     </div>
     ${testaATesta(dA, dB)}
 

@@ -82,6 +82,35 @@ export function debounce(fn, wait = 200) {
   };
 }
 
+export function metodoVittorie(storico) {
+  const vittorie = (storico || []).filter((f) => classeRisultato(f["res."]) === "win");
+  const conta = (prefissi) => vittorie.filter((f) => prefissi.some((p) => (f.method || "").toLowerCase().startsWith(p))).length;
+  const ko = conta(["ko", "tko"]);
+  const sub = conta(["submission"]);
+  const dec = conta(["decision"]);
+  return { ko, sub, dec, altro: vittorie.length - ko - sub - dec, totale: vittorie.length };
+}
+
+export function streakAttuale(storico) {
+  if (!storico || !storico.length) return null;
+  const tipo = classeRisultato(storico[0]["res."]);
+  if (tipo !== "win" && tipo !== "loss") return null;
+  let n = 0;
+  for (const f of storico) {
+    if (classeRisultato(f["res."]) !== tipo) break;
+    n++;
+  }
+  return n > 1 ? { tipo, n } : null;
+}
+
+export function badgeStreak(storico) {
+  const streak = streakAttuale(storico);
+  if (!streak) return "";
+  const colore = streak.tipo === "win" ? "var(--win)" : "var(--loss)";
+  const testo = streak.tipo === "win" ? "vittorie di fila" : "sconfitte di fila";
+  return `<div class="streak-badge" style="color:${colore};">${streak.n} ${testo}</div>`;
+}
+
 export function formDots(storico, n = 5) {
   if (!storico || !storico.length) return "";
   const ultimi = storico.slice(0, n);
